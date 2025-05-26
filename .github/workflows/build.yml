@@ -71,7 +71,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build JVM container with Kotlin application
-        run: podman build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} . -f images/api/Dockerfile
+        run: podman build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} . -f images/backend/Dockerfile
 
       - name: Push build JVM container to registry
         run: skopeo copy containers-storage:localhost/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} docker://${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
