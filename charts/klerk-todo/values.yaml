@@ -29,3 +29,13 @@ ingress:
     - secretName: "klerk-todo-tls"
       hosts:
         - "klerk-todo.moshicon.se"
+
+cleanup:
+  # Enable the cleanup CronJob that deletes backend pods every 24 hours to purge demo data
+  enabled: true
+  # Cron schedule for cleanup (default: daily at midnight)
+  schedule: "0 0 * * *"
+  # Number of successful jobs to keep in history
+  successfulJobsHistoryLimit: 3
+  # Number of failed jobs to keep in history
+  failedJobsHistoryLimit: 1

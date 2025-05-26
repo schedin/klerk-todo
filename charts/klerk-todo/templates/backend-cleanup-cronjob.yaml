@@ -1,0 +1,36 @@
+{{- if .Values.cleanup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backend-cleanup
+  labels:
+    app.kubernetes.io/name: klerk-todo
+    app.kubernetes.io/component: cleanup
+spec:
+  # Schedule for cleanup (configurable via values.yaml)
+  schedule: {{ .Values.cleanup.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: klerk-todo
+            app.kubernetes.io/component: cleanup
+        spec:
+          serviceAccountName: backend-cleanup
+          restartPolicy: OnFailure
+          containers:
+          - name: kubectl
+            image: bitnami/kubectl:latest
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Deleting backend pods to purge demo data..."
+              kubectl delete pod -l app.kubernetes.io/component=backend,app.kubernetes.io/name=klerk-todo --ignore-not-found=true
+              echo "Backend pods deleted successfully. Deployment will recreate them."
+  # Keep configurable number of jobs in history
+  successfulJobsHistoryLimit: {{ .Values.cleanup.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cleanup.failedJobsHistoryLimit }}
+{{- end }}
