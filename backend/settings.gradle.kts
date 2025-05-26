@@ -7,10 +7,3 @@ dependencyResolutionManagement {
         maven("https://jitpack.io")
     }
 }
-
-includeBuild("../../../klerk-mcp") {
-//    dependencySubstitution {
-//        substitute(module("dev.klerkframework:klerk-mcp"))
-//            .using(project(":"))
-//    }
-}
