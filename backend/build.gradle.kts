@@ -15,11 +15,11 @@ plugins {
     id("com.expediagroup.graphql") version "7.1.1"
 }
 
-group = "se.moshicon.klerkframework.todo_app"
+group = "se.moshicon.klerk_todo"
 version = "1.0-SNAPSHOT"
 
 application {
-    mainClass.set("se.moshicon.klerkframework.todo_app.ApplicationKt")
+    mainClass.set("se.moshicon.klerk_todo.ApplicationKt")
 }
 
 dependencies {
@@ -47,7 +47,6 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
     implementation("com.auth0:java-jwt:$jwt_version")
 
-    implementation("dev.klerkframework:klerk-mcp:0.1.0-SNAPSHOT") //TODO, fix version before release
     implementation("io.modelcontextprotocol:kotlin-sdk:${property("mcp_sdk_version")}") // MCP SDK
 
     testImplementation(kotlin("test"))
