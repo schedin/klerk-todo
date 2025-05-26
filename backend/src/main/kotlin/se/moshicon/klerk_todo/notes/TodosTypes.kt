@@ -1,10 +1,10 @@
-package se.moshicon.klerkframework.todo_app.notes
+package se.moshicon.klerk_todo.notes
 
 import dev.klerkframework.klerk.InvalidParametersProblem
 import dev.klerkframework.klerk.ModelID
 import dev.klerkframework.klerk.datatypes.IntContainer
 import dev.klerkframework.klerk.datatypes.StringContainer
-import se.moshicon.klerkframework.todo_app.users.User
+import se.moshicon.klerk_todo.users.User
 
 data class Todo(
     val title: TodoTitle,

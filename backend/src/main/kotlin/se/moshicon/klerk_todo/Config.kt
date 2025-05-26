@@ -1,4 +1,4 @@
-package se.moshicon.klerkframework.todo_app
+package se.moshicon.klerk_todo
 
 import dev.klerkframework.klerk.*
 import dev.klerkframework.klerk.collection.ModelCollections
@@ -10,10 +10,11 @@ import org.apache.commons.dbcp2.BasicDataSource
 import org.mariadb.jdbc.MariaDbDataSource
 import org.slf4j.LoggerFactory
 import org.sqlite.SQLiteDataSource
-import se.moshicon.klerkframework.todo_app.notes.Todo
-import se.moshicon.klerkframework.todo_app.notes.todoStateMachine
-import se.moshicon.klerkframework.todo_app.users.User
-import se.moshicon.klerkframework.todo_app.users.userStateMachine
+import se.moshicon.klerk_todo.authorizationRules
+import se.moshicon.klerk_todo.notes.Todo
+import se.moshicon.klerk_todo.notes.todoStateMachine
+import se.moshicon.klerk_todo.users.User
+import se.moshicon.klerk_todo.users.userStateMachine
 
 class Ctx(
     override val actor: ActorIdentity,
@@ -54,7 +55,7 @@ private fun createPersistence(): Persistence {
     return SqlPersistence(ds)
 }
 
-private val logger = LoggerFactory.getLogger("se.moshicon.klerkframework.todo_app.Config")
+private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.Config")
 
 private fun createMariaDbPersistenceWithoutConnectionPool(): Persistence {
     val ds = MariaDbDataSource()

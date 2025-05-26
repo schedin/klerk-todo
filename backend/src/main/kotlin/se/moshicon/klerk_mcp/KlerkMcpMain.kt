@@ -1,4 +1,4 @@
-package dev.klerkframework.mcp
+package se.moshicon.klerk_mcp
 
 import dev.klerkframework.klerk.*
 import dev.klerkframework.klerk.CommandResult.Failure

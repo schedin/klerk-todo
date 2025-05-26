@@ -1,12 +1,12 @@
-package se.moshicon.klerkframework.todo_app.users
+package se.moshicon.klerk_todo.users
 
 import dev.klerkframework.klerk.*
 import dev.klerkframework.klerk.command.Command
 import dev.klerkframework.klerk.statemachine.stateMachine
-import se.moshicon.klerkframework.todo_app.Ctx
-import se.moshicon.klerkframework.todo_app.Data
-import se.moshicon.klerkframework.todo_app.notes.DeleteTodoInternal
-import se.moshicon.klerkframework.todo_app.notes.DeleteTodoInternalParams
+import se.moshicon.klerk_todo.Ctx
+import se.moshicon.klerk_todo.Data
+import se.moshicon.klerk_todo.notes.DeleteTodoInternal
+import se.moshicon.klerk_todo.notes.DeleteTodoInternalParams
 
 
 enum class UserStates {

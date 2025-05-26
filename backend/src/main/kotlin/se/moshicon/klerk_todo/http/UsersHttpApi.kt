@@ -1,4 +1,4 @@
-package se.moshicon.klerkframework.todo_app.http
+package se.moshicon.klerk_todo.http
 
 import dev.klerkframework.klerk.AuthenticationIdentity
 import dev.klerkframework.klerk.CommandResult.Failure
@@ -14,11 +14,12 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import se.moshicon.klerkframework.todo_app.Ctx
-import se.moshicon.klerkframework.todo_app.Data
-import se.moshicon.klerkframework.todo_app.users.DeleteAllUserTodos
-import se.moshicon.klerkframework.todo_app.users.DeleteUser
-import se.moshicon.klerkframework.todo_app.users.User
+import se.moshicon.klerk_todo.http.context
+import se.moshicon.klerk_todo.Ctx
+import se.moshicon.klerk_todo.Data
+import se.moshicon.klerk_todo.users.DeleteAllUserTodos
+import se.moshicon.klerk_todo.users.DeleteUser
+import se.moshicon.klerk_todo.users.User
 
 fun registerUsersRoutes(klerk: Klerk<Ctx, Data>): Route.() -> Unit = {
     get("/{...}") { getUsers(call, klerk) }

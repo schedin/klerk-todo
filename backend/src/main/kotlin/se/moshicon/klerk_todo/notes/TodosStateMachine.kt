@@ -1,4 +1,4 @@
-package se.moshicon.klerkframework.todo_app.notes
+package se.moshicon.klerk_todo.notes
 
 import dev.klerkframework.klerk.*
 import dev.klerkframework.klerk.actions.Job
@@ -7,12 +7,12 @@ import dev.klerkframework.klerk.actions.JobId
 import dev.klerkframework.klerk.actions.JobResult
 import dev.klerkframework.klerk.statemachine.stateMachine
 import kotlinx.datetime.Instant
-import se.moshicon.klerkframework.todo_app.Ctx
-import se.moshicon.klerkframework.todo_app.Data
-import se.moshicon.klerkframework.todo_app.notes.TodoStates.*
-import se.moshicon.klerkframework.todo_app.users.GroupModelIdentity
-import se.moshicon.klerkframework.todo_app.users.User
-import se.moshicon.klerkframework.todo_app.users.UserName
+import se.moshicon.klerk_todo.Ctx
+import se.moshicon.klerk_todo.Data
+import se.moshicon.klerk_todo.notes.TodoStates.*
+import se.moshicon.klerk_todo.users.GroupModelIdentity
+import se.moshicon.klerk_todo.users.User
+import se.moshicon.klerk_todo.users.UserName
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 

@@ -1,12 +1,12 @@
-package se.moshicon.klerkframework.todo_app.users
+package se.moshicon.klerk_todo.users
 
 import dev.klerkframework.klerk.AuthenticationIdentity
 import dev.klerkframework.klerk.Klerk
 import dev.klerkframework.klerk.command.Command
 import dev.klerkframework.klerk.command.CommandToken
 import dev.klerkframework.klerk.command.ProcessingOptions
-import se.moshicon.klerkframework.todo_app.Ctx
-import se.moshicon.klerkframework.todo_app.Data
+import se.moshicon.klerk_todo.Ctx
+import se.moshicon.klerk_todo.Data
 
 suspend fun createInitialUsers(klerk: Klerk<Ctx, Data>) {
     val users = klerk.read(Ctx(AuthenticationIdentity)) {

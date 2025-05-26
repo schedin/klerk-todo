@@ -1,4 +1,4 @@
-package se.moshicon.klerkframework.todo_app.http
+package se.moshicon.klerk_todo.http
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -13,9 +13,12 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import se.moshicon.klerkframework.todo_app.Ctx
-import se.moshicon.klerkframework.todo_app.Data
-import se.moshicon.klerkframework.todo_app.users.*
+import se.moshicon.klerk_todo.Ctx
+import se.moshicon.klerk_todo.Data
+import se.moshicon.klerk_todo.http.registerServersideRoutes
+import se.moshicon.klerk_todo.http.registerTodoRoutes
+import se.moshicon.klerk_todo.http.registerUsersRoutes
+import se.moshicon.klerk_todo.users.*
 
 // JWT configuration constants
 // Note: In this demo, we're using a simplified JWT implementation without real verification

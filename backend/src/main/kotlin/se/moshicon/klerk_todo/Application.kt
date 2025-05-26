@@ -1,11 +1,11 @@
-package se.moshicon.klerkframework.todo_app
+package se.moshicon.klerk_todo
 
 import dev.klerkframework.klerk.AuthenticationIdentity
 import dev.klerkframework.klerk.Klerk
 import dev.klerkframework.klerk.command.Command
 import dev.klerkframework.klerk.command.CommandToken
 import dev.klerkframework.klerk.command.ProcessingOptions
-import dev.klerkframework.mcp.createMcpServer
+import se.moshicon.klerk_mcp.createMcpServer
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -17,10 +17,10 @@ import io.modelcontextprotocol.kotlin.sdk.server.mcp
 
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import se.moshicon.klerkframework.todo_app.http.configureHttpRouting
-import se.moshicon.klerkframework.todo_app.http.findOrCreateUser
-import se.moshicon.klerkframework.todo_app.notes.*
-import se.moshicon.klerkframework.todo_app.users.*
+import se.moshicon.klerk_todo.http.configureHttpRouting
+import se.moshicon.klerk_todo.http.findOrCreateUser
+import se.moshicon.klerk_todo.notes.*
+import se.moshicon.klerk_todo.users.*
 import kotlin.time.measureTime
 
 private val logger = LoggerFactory.getLogger(Application::class.java.name)

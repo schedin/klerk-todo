@@ -1,14 +1,16 @@
-package se.moshicon.klerkframework.todo_app
+package se.moshicon.klerk_todo
 
 import dev.klerkframework.klerk.*
-import se.moshicon.klerkframework.todo_app.notes.CreateTodo
-import se.moshicon.klerkframework.todo_app.notes.CreateTodoParams
-import se.moshicon.klerkframework.todo_app.notes.Todo
-import se.moshicon.klerkframework.todo_app.users.GroupModelIdentity
-import se.moshicon.klerkframework.todo_app.users.User
+import se.moshicon.klerk_todo.notes.CreateTodo
+import se.moshicon.klerk_todo.notes.CreateTodoParams
+import se.moshicon.klerk_todo.notes.Todo
+import se.moshicon.klerk_todo.users.GroupModelIdentity
+import se.moshicon.klerk_todo.users.User
 import dev.klerkframework.klerk.PositiveAuthorization.*
-import se.moshicon.klerkframework.todo_app.notes.DeleteTodoInternal
-import se.moshicon.klerkframework.todo_app.users.CreateUser
+import se.moshicon.klerk_todo.Ctx
+import se.moshicon.klerk_todo.Data
+import se.moshicon.klerk_todo.notes.DeleteTodoInternal
+import se.moshicon.klerk_todo.users.CreateUser
 
 private const val USERS_GROUP = "users"
 private const val ADMINS_GROUP = "admins"
@@ -122,7 +124,7 @@ fun guestsCanOnlyCreateOneTodo(args: ArgCommandContextReader<*, Ctx, Data>): Neg
     val actor = args.context.actor
     if (actor is GroupModelIdentity && actor.groups.contains(GUESTS_GROUP) && !actor.groups.contains(USERS_GROUP)
         && args.command.event is CreateTodo) {
-        val numOfTodosForUser = args.reader.list(args.reader.data.todos.all) {
+        val numOfTodosForUser = args.reader.list(Data.todos.all) {
             actor.model.id == it.props.userID
         }.size
         return if (numOfTodosForUser < 1) NegativeAuthorization.Pass else NegativeAuthorization.Deny

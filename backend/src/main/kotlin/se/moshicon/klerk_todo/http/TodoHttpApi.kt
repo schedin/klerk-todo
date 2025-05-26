@@ -1,6 +1,5 @@
-package se.moshicon.klerkframework.todo_app.http
+package se.moshicon.klerk_todo.http
 
-import dev.klerkframework.klerk.AuthenticationIdentity
 import dev.klerkframework.klerk.Klerk
 import dev.klerkframework.klerk.Model
 import dev.klerkframework.klerk.ModelID
@@ -19,11 +18,12 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
-import se.moshicon.klerkframework.todo_app.*
-import se.moshicon.klerkframework.todo_app.notes.*
-import se.moshicon.klerkframework.todo_app.users.GroupModelIdentity
+import se.moshicon.klerk_todo.http.context
+import se.moshicon.klerk_todo.*
+import se.moshicon.klerk_todo.notes.*
+import se.moshicon.klerk_todo.users.GroupModelIdentity
 
-private val logger = LoggerFactory.getLogger("se.moshicon.klerkframework.todo_app.http.TodoHttpApi")
+private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.http.TodoHttpApi")
 
 /**
  * Cache for TODO model IDs to improve performance of the random TODO endpoint

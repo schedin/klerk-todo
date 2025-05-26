@@ -1,4 +1,4 @@
-package se.moshicon.klerkframework.todo_app.users
+package se.moshicon.klerk_todo.users
 
 import dev.klerkframework.klerk.datatypes.StringContainer
 

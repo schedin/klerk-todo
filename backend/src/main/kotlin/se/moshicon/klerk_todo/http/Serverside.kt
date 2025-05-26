@@ -1,4 +1,4 @@
-package se.moshicon.klerkframework.todo_app.http
+package se.moshicon.klerk_todo.http
 
 import dev.klerkframework.klerk.CommandResult
 import dev.klerkframework.klerk.EventWithParameters
@@ -14,10 +14,11 @@ import io.ktor.server.html.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.html.*
-import se.moshicon.klerkframework.todo_app.Ctx
-import se.moshicon.klerkframework.todo_app.Data
-import se.moshicon.klerkframework.todo_app.notes.*
-import se.moshicon.klerkframework.todo_app.users.UserName
+import se.moshicon.klerk_todo.http.context
+import se.moshicon.klerk_todo.Ctx
+import se.moshicon.klerk_todo.Data
+import se.moshicon.klerk_todo.notes.*
+import se.moshicon.klerk_todo.users.UserName
 import kotlin.reflect.KProperty1
 
 
