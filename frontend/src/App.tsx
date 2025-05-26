@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { Todo, CreateTodoParams } from './types/todo';
-import { todoApi, userApi } from './services/api';
+import { todoApi } from './services/api';
 //import { mockTodoApi as todoApi } from './services/mockData';
 import TodoList from './components/TodoList';
 import TodoForm from './components/TodoForm';
