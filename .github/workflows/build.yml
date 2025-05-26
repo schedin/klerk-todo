@@ -93,6 +93,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+
+      #             --set ingress.annotations.cert-manager\\.io/cluster-issuer=letsencrypt \
       - name: Deploy with Helm
         run: |
           helm upgrade --install klerk-todo ./charts/klerk-todo \
@@ -100,7 +102,6 @@ jobs:
             --create-namespace \
             --set image.tag=${{ needs.generate-tag.outputs.IMAGE_TAG }} \
             --set global.imageRegistryPrefix=${{ env.REGISTRY_URL }} \
-            --set ingress.annotations.cert-manager\\.io/cluster-issuer=letsencrypt \
             --set ingress.hosts[0]=klerk-todo.moshicon.se \
             --set ingress.tls[0].secretName=klerk-todo-tls \
             --set ingress.tls[0].hosts[0]=klerk-todo.moshicon.se
