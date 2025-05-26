@@ -1,0 +1,31 @@
+
+global:
+  # Image registry (and optional repository sub path) to use for all images
+  imageRegistryPrefix: "127.0.0.1:30000"
+
+image:
+  pullPolicy: Always
+  tag: "latest"
+
+frontend:
+  image:
+    image: "klerk-todo/frontend"
+
+backend:
+  image:
+    image: "klerk-todo/backend"
+  llmServerUrl: "http://llm:11434"
+
+backendLlm:
+  image:
+    image: "klerk-todo/backend-llm"
+
+ingress:
+  annotations: {}
+    # cert-manager.io/cluster-issuer: "letsencrypt"
+  hosts:
+    - "klerk-todo.moshicon.se"
+  tls:
+    - secretName: "klerk-todo-tls"
+      hosts:
+        - "klerk-todo.moshicon.se"
