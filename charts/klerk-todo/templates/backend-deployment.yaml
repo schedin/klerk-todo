@@ -18,12 +18,12 @@ spec:
         app.kubernetes.io/component: backend
     spec:
       containers:
-      - name: python
+      - name: jvm
         image: "{{ .Values.global.imageRegistryPrefix }}/{{ .Values.backend.image.image}}:{{.Values.image.tag}}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - name: http
-          containerPort: 8000
+          containerPort: 8080
           protocol: TCP
         env:
         - name: LLM_URL
