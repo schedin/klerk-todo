@@ -28,3 +28,5 @@ spec:
         env:
         - name: LLM_URL
           value: "http://llm:11434"
+        - name: DATABASE_PATH
+          value: "/deployments/data/klerk-todo.sqlite"
