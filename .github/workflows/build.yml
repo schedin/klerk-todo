@@ -104,7 +104,4 @@ jobs:
             --namespace klerk-todo \
             --create-namespace \
             --set image.tag=${{ needs.generate-tag.outputs.IMAGE_TAG }} \
-            --set global.imageRegistryPrefix=${{ env.REGISTRY_URL }} \
-            --set ingress.hosts[0]=klerk-todo.moshicon.se \
-            --set ingress.tls[0].secretName=klerk-todo-tls \
-            --set ingress.tls[0].hosts[0]=klerk-todo.moshicon.se
+            --set global.imageRegistryPrefix=${{ env.REGISTRY_URL }}

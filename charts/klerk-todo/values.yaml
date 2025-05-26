@@ -21,8 +21,8 @@ backendLlm:
     image: "klerk-todo/backend-llm"
 
 ingress:
-  annotations: {}
-    # cert-manager.io/cluster-issuer: "letsencrypt"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
   hosts:
     - "klerk-todo.moshicon.se"
   tls:
