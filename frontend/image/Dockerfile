@@ -4,7 +4,7 @@ FROM docker.io/nginx:alpine
 COPY image/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy the static export output
-COPY out /usr/share/nginx/html
+COPY ../../build /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
