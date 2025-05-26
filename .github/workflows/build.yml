@@ -1,0 +1,106 @@
+name: Build and deploy
+
+on:
+  # push:
+  #   branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGISTRY_URL: registry.moshicon.se:30000
+
+jobs:
+  generate-tag:
+    name: Generate image tag
+    runs-on: klerk-todo-runner-set
+    outputs:
+      IMAGE_TAG: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set image tag
+        id: set-tag
+        run: |
+          TAG=$(git rev-parse --short=7 HEAD)-$(date +'%Y%m%d')
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+  build-frontend:
+    name: Build web frontend
+    needs: generate-tag
+    runs-on: klerk-todo-runner-set
+    env:
+      IMAGE_NAME: klerk-todo/frontend
+      IMAGE_TAG: ${{ needs.generate-tag.outputs.IMAGE_TAG }}
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build container
+        run: podman build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} . -f image/Dockerfile
+
+      - name: Push container to registry
+        run: skopeo copy containers-storage:localhost/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} docker://${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+  build-backend:
+    name: Build web backend
+    needs: generate-tag
+    runs-on: klerk-todo-runner-set
+    env:
+      IMAGE_NAME: klerk-todo/backend
+      IMAGE_TAG: ${{ needs.generate-tag.outputs.IMAGE_TAG }}
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build JVM container with Kotlin application
+        run: podman build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} . -f images/api/Dockerfile
+
+      - name: Push build JVM container to registry
+        run: skopeo copy containers-storage:localhost/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} docker://${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Build LLM container
+        run: podman build -t ${{ env.IMAGE_NAME }}-llm:${{ env.IMAGE_TAG }} . -f images/llm/Dockerfile
+
+      - name: Push LLM container to registry
+        run: skopeo copy containers-storage:localhost/${{ env.IMAGE_NAME }}-llm:${{ env.IMAGE_TAG }} docker://${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}-llm:${{ env.IMAGE_TAG }}
+
+
+  deploy-helm:
+    name: Deploy Helm Chart
+    needs:
+      - generate-tag
+      - build-frontend
+      - build-backend
+    runs-on: klerk-todo-runner-set
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install klerk-todo ./charts/klerk-todo \
+            --namespace klerk-todo \
+            --create-namespace \
+            --set image.tag=${{ needs.generate-tag.outputs.IMAGE_TAG }} \
+            --set global.imageRegistryPrefix=${{ env.REGISTRY_URL }} \
+            --set ingress.annotations.cert-manager\\.io/cluster-issuer=letsencrypt \
+            --set ingress.hosts[0]=klerk-todo.moshicon.se \
+            --set ingress.tls[0].secretName=klerk-todo-tls \
+            --set ingress.tls[0].hosts[0]=klerk-todo.moshicon.se
