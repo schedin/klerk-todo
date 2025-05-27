@@ -11,12 +11,14 @@ import io.ktor.server.application.*
 import io.ktor.http.*
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.GlobalScope
 import org.slf4j.LoggerFactory
 import se.moshicon.klerk_todo.http.configureHttpRouting
 import se.moshicon.klerk_todo.http.findOrCreateUser
 import se.moshicon.klerk_todo.users.*
 import se.moshicon.klerk_mcp.createMcpServer
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
+import se.moshicon.klerk_todo.chat.ChatSessionManager
 
 private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.Application")
 
@@ -29,6 +31,14 @@ fun main() {
         }
     }
 //    performanceInsertTest(klerk)
+
+    ChatSessionManager.initialize(GlobalScope)
+
+    // Add shutdown hook to clean up session manager
+    Runtime.getRuntime().addShutdownHook(Thread {
+        logger.info("Shutting down chat session manager...")
+        ChatSessionManager.shutdown()
+    })
 
     startMcpServer(klerk)
     embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
