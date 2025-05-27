@@ -47,20 +47,11 @@ private suspend fun addNewChatMessage(call: ApplicationCall) {
         )
 
         val chatSession = ChatSessionManager.getOrCreateSession(userId)
-        val responseMessage = handleChatMessage(chatSession, chatMessage)
+        val responseMessage = ChatSessionManager.chatEngine.handleChatMessage(chatSession, chatMessage)
         call.respond(HttpStatusCode.OK, ChatMessageResponse(responseMessage))
     } catch (e: Exception) {
         call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send message: ${e.message}"))
     }
-}
-
-private fun handleChatMessage(chatSession: ChatSession, message: ChatMessage): ChatMessage {
-    chatSession.addMessage(message)
-    val responseMessage = ChatMessage(
-        content = "You said ${message.content}."
-    )
-    chatSession.addMessage(responseMessage)
-    return responseMessage
 }
 
 private suspend fun clearChatHistory(call: ApplicationCall) {

@@ -13,6 +13,7 @@ object ChatSessionManager {
     private val logger = LoggerFactory.getLogger(ChatSessionManager::class.java)
     private val sessions = ConcurrentHashMap<String, ChatSession>()
     private val userSessions = ConcurrentHashMap<String, String>() // userId -> sessionId
+    val chatEngine = ChatEngine()
     
     // Configuration
     private const val SESSION_TIMEOUT_MINUTES = 30L
@@ -32,8 +33,8 @@ object ChatSessionManager {
             }
         }
         logger.info("Chat session manager initialized")
-}
-    
+    }
+
     /**
      * Stops the session manager and cancels cleanup
      */
