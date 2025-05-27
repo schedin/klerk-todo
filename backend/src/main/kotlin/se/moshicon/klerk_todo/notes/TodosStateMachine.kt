@@ -16,7 +16,7 @@ import se.moshicon.klerk_todo.users.UserName
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 
-private const val MAX_GLOBAL_TODOS = 3
+private const val MAX_GLOBAL_TODOS = 50
 
 enum class TodoStates {
     Created,
@@ -135,7 +135,7 @@ fun titleCannotContainBannedWords(args: ArgForVoidEvent<Todo, CreateTodoParams, 
 fun validateMaxTodoLimit(args: ArgForVoidEvent<Todo, Nothing?, Ctx, Data>): Validity {
     val totalTodoCount = args.reader.list(args.reader.data.todos.all).size
     if (totalTodoCount >= MAX_GLOBAL_TODOS) {
-        return Validity.Invalid("Cannot create TODO: system already has $totalTodoCount TODOs (maximum $MAX_GLOBAL_TODOS allowed)")
+        return Validity.Invalid("Cannot create TODO: system already has $totalTodoCount TODOs (maximum $MAX_GLOBAL_TODOS allowed). Buy additional licenses to increase limit.")
     }
     return Validity.Valid
 }

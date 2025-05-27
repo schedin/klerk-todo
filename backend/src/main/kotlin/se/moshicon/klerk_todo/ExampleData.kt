@@ -12,48 +12,49 @@ import se.moshicon.klerk_todo.users.CreateUserParams
 import se.moshicon.klerk_todo.users.GroupModelIdentity
 import se.moshicon.klerk_todo.users.UserName
 
+suspend fun createExampleData(klerk: Klerk<Ctx, Data>) {
+    createInitialUsers(klerk)
+    createInitialTodo(klerk)
+}
+
 suspend fun createInitialUsers(klerk: Klerk<Ctx, Data>) {
-    val users = klerk.read(Ctx(AuthenticationIdentity)) {
-        list(data.users.all)
+    suspend fun createUser(username: String) {
+        val command = Command(
+            event = CreateUser,
+            model = null,
+            params = CreateUserParams(UserName(username)),
+        )
+        klerk.handle(command, Ctx(AuthenticationIdentity), ProcessingOptions(CommandToken.simple()))
     }
-    if (users.isEmpty()) {
-        suspend fun createUser(username: String) {
-            val command = Command(
-                event = CreateUser,
-                model = null,
-                params = CreateUserParams(UserName(username)),
-            )
-            klerk.handle(command, Ctx(AuthenticationIdentity), ProcessingOptions(CommandToken.simple()))
-        }
-        createUser("Alice")
-        createUser("Bob")
-        createUser("Charlie")
-    }
+    createUser("Alice")
+    createUser("Bob")
+    createUser("Charlie")
 }
 
 suspend fun createInitialTodo(klerk: Klerk<Ctx, Data>) {
-    val context = Ctx(SystemIdentity)
-    val numberOfTodos = klerk.read(context) {
-        list(data.todos.all).size
+    suspend fun createTodo(username: String, title: String, desc: String, priority: Int) {
+        val user = klerk.read(Ctx(SystemIdentity)) {
+            getFirstWhere(data.users.all) {
+                it.props.name.value == username
+            }
+        }
+
+        val context = Ctx(GroupModelIdentity(model = user, groups = listOf("users")))
+        val command = Command(
+            event = CreateTodo,
+            model = null,
+            params = CreateTodoParams(
+                title = TodoTitle(title),
+                description = TodoDescription("Go to the store and buy milk"),
+                username = UserName(username),
+                priority = TodoPriority(6),
+            ),
+        )
+        klerk.handle(command, context, ProcessingOptions(CommandToken.simple())).orThrow()
     }
-    if (numberOfTodos != 0) {
-        return
-    }
 
-    val user = (context.actor as? GroupModelIdentity)?.model?.props
-        ?: throw IllegalStateException("User not found in context")
-
-    val command = Command(
-        event = CreateTodo,
-        model = null,
-        params = CreateTodoParams(
-            title = TodoTitle("Buy milk"),
-            description = TodoDescription("Go to the store and buy milk"),
-            username = user.name,
-            priority = TodoPriority(6),
-        ),
-    )
-
-    klerk.handle(command, context, ProcessingOptions(CommandToken.simple()))
-
+    createTodo("Alice", "Perform code review", "Send code review comments to Bob", 4)
+    createTodo("Alice", "Deploy application", "Deply the application to production in Kubernetes", 2)
+    createTodo("Alice", "Send invoice", "Send invoice to customer to invoice@example.com", 8)
+    createTodo("Bob", "Buy milk", "Go to the store and buy milk", 6)
 }

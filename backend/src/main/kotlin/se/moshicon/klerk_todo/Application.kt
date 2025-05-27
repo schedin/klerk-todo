@@ -24,16 +24,16 @@ import se.moshicon.klerk_todo.notes.*
 import se.moshicon.klerk_todo.users.*
 import kotlin.time.measureTime
 
-private val logger = LoggerFactory.getLogger(Application::class.java.name)
+private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.Application")
 
 fun main() {
     val klerk = Klerk.create(createConfig())
     runBlocking {
         klerk.meta.start()
-        createInitialUsers(klerk)
-        createInitialTodo(klerk)
+        if (klerk.meta.modelsCount == 0) {
+            createExampleData(klerk)
+        }
     }
-
 //    performanceInsertTest(klerk)
 
     suspend fun contextProvider(command: Command<*, *>?): Ctx {
