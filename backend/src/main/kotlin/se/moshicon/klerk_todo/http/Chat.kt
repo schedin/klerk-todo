@@ -16,70 +16,77 @@ import se.moshicon.klerk_todo.McpServerConfig
 import se.moshicon.klerk_todo.chat.*
 
 fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig): Route.() -> Unit = {
+    get("/history") { getChatHistory(call) }
+    post("/message") { sendChatMessage(call) }
+    delete("/history") { clearChatHistory(call) }
+    get("/stats") { getChatStats(call) }
+}
 
-    // Get chat history
-    get("/history") {
-        val userId = getUserIdFromCall(call) ?: return@get
+/**
+ * Handles GET /api/chat/history - retrieves chat history for the authenticated user
+ */
+private suspend fun getChatHistory(call: ApplicationCall) {
+    val userId = getUserIdFromCall(call) ?: return
 
-        try {
-            val session = ChatSessionManager.getSessionByUserId(userId)
-            val messages = session?.getHistory() ?: emptyList()
-            call.respond(HttpStatusCode.OK, ChatHistoryResponse(messages))
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to get history: ${e.message}"))
-        }
+    try {
+        val session = ChatSessionManager.getSessionByUserId(userId)
+        val messages = session?.getHistory() ?: emptyList()
+        call.respond(HttpStatusCode.OK, ChatHistoryResponse(messages))
+    } catch (e: Exception) {
+        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to get history: ${e.message}"))
     }
+}
 
-    // Send a message
-    post("/message") {
-        val userId = getUserIdFromCall(call) ?: return@post
+/**
+ * Handles POST /api/chat/message - sends a message to the user's chat session
+ */
+private suspend fun sendChatMessage(call: ApplicationCall) {
+    val userId = getUserIdFromCall(call) ?: return
 
-        try {
-            val request = call.receive<ChatMessageRequest>()
+    try {
+        val request = call.receive<ChatMessageRequest>()
 
-            // Validate message content
-            if (request.content.isBlank()) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Message content cannot be empty"))
-                return@post
-            }
-
-            val message = ChatMessage(
-                content = request.content.trim()
-            )
-            ChatSessionManager.addMessage(userId, message)
-
-            val responseMessage = ChatMessage(
-                content = "You said ${request.content}."
-            )
-            ChatSessionManager.addMessage(userId, responseMessage)
-
-            call.respond(HttpStatusCode.OK, ChatMessageResponse(responseMessage))
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send message: ${e.message}"))
+        // Validate message content
+        if (request.content.isBlank()) {
+            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Message content cannot be empty"))
+            return
         }
+
+        val message = ChatMessage(
+            content = request.content.trim()
+        )
+        ChatSessionManager.addMessage(userId, message)
+
+        call.respond(HttpStatusCode.OK, ChatMessageResponse(message))
+    } catch (e: Exception) {
+        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send message: ${e.message}"))
     }
+}
 
-    // Clear chat history
-    delete("/history") {
-        val userId = getUserIdFromCall(call) ?: return@delete
+/**
+ * Handles DELETE /api/chat/history - clears chat history for the authenticated user
+ */
+private suspend fun clearChatHistory(call: ApplicationCall) {
+    val userId = getUserIdFromCall(call) ?: return
 
-        try {
-            ChatSessionManager.clearSession(userId)
-            call.respond(HttpStatusCode.OK, mapOf("message" to "Chat history cleared successfully"))
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to clear history: ${e.message}"))
-        }
+    try {
+        ChatSessionManager.clearSession(userId)
+        call.respond(HttpStatusCode.OK, mapOf("message" to "Chat history cleared successfully"))
+    } catch (e: Exception) {
+        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to clear history: ${e.message}"))
     }
+}
 
-//    // Get session statistics (for debugging/monitoring)
-//    get("/stats") {
-//        try {
-//            val stats = ChatSessionManager.getSessionStats()
-//            call.respond(HttpStatusCode.OK, stats)
-//        } catch (e: Exception) {
-//            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to get stats: ${e.message}"))
-//        }
-//    }
+/**
+ * Handles GET /api/chat/stats - gets session statistics for monitoring/debugging
+ */
+private suspend fun getChatStats(call: ApplicationCall) {
+    try {
+        val stats = ChatSessionManager.getSessionStats()
+        call.respond(HttpStatusCode.OK, stats)
+    } catch (e: Exception) {
+        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to get stats: ${e.message}"))
+    }
 }
 
 /**

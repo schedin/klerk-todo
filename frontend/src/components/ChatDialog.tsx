@@ -15,6 +15,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -25,10 +26,14 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
     scrollToBottom();
   }, [messages]);
 
-  // Load chat history when dialog opens
+  // Load chat history when dialog opens and focus input
   useEffect(() => {
     if (isOpen) {
       loadHistory();
+      // Focus the input field when dialog opens
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   }, [isOpen]);
 
@@ -61,8 +66,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
       setMessages(prev => [...prev, userMessage]);
 
       // Send message to server
-      const responseMessage = await chatApi.sendMessage(messageContent);
-      
+      await chatApi.sendMessage(messageContent);
+
       // Reload history to get both user message and response with correct IDs
       await loadHistory();
     } catch (err) {
@@ -72,6 +77,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
       setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
     } finally {
       setLoading(false);
+      // Refocus the input field after sending
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -86,7 +95,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -125,7 +134,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
         }}
       >
         <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
-          Chat Assistant
+          🤖 Chat Assistant
         </h3>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
@@ -140,7 +149,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
               fontSize: '12px',
             }}
           >
-            Reset
+            Clear
           </button>
           <button
             onClick={onClose}
@@ -182,7 +191,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
             {error}
           </div>
         )}
-        
+
         {messages.length === 0 ? (
           <div
             style={{
@@ -222,10 +231,11 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
       >
         <div style={{ display: 'flex', gap: '8px' }}>
           <input
+            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Type your message..."
             disabled={loading}
             style={{
