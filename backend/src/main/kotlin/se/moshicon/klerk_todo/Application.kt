@@ -19,6 +19,7 @@ import se.moshicon.klerk_todo.users.*
 import se.moshicon.klerk_mcp.createMcpServer
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
 import se.moshicon.klerk_todo.chat.ChatSessionManager
+import se.moshicon.klerk_todo.chat.ChatEngine
 
 private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.Application")
 
@@ -34,7 +35,25 @@ fun main() {
 
     startMcpServer(klerk)
 
-    ChatSessionManager.initialize(GlobalScope)
+    // Create and initialize ChatEngine with MCP connection
+    val chatEngine = ChatEngine(
+        Url(McpServerConfig.getServerUrl()),
+        Url(McpClientConfig.llmServerUrl)
+    )
+
+    // Initialize MCP server connection
+    runBlocking {
+        try {
+            logger.info("Initializing MCP server connection...")
+            chatEngine.initMcpServerConnection()
+            logger.info("MCP server connection initialized successfully")
+        } catch (e: Exception) {
+            logger.error("Failed to initialize MCP server connection: ${e.message}", e)
+            // Continue startup even if MCP connection fails
+        }
+    }
+
+    ChatSessionManager.initialize(GlobalScope, chatEngine)
     Runtime.getRuntime().addShutdownHook(Thread {
         logger.info("Shutting down chat session manager...")
         ChatSessionManager.shutdown()
@@ -85,7 +104,7 @@ fun startMcpServer(klerk: Klerk<Ctx, Data>) {
         }.start(wait = true)
     }.start()
 
-    logger.info("MCP server started at ${McpServerConfig.URL}")
+    logger.info("MCP server started at ${McpServerConfig.getServerUrl()}")
 }
 
 

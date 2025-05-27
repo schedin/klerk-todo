@@ -2,6 +2,7 @@ package se.moshicon.klerk_todo.chat
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.sse.*
 import io.ktor.http.*
 import io.modelcontextprotocol.kotlin.sdk.Implementation
 import org.slf4j.LoggerFactory
@@ -15,7 +16,9 @@ class ChatEngine(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val mcp: Client = Client(clientInfo = Implementation(name = "mcp-todo-chat-client", version = "1.0.0"))
-    val httpClient = HttpClient(CIO)
+    val httpClient = HttpClient(CIO) {
+        install(SSE)
+    }
     val transport = SseClientTransport(httpClient, mcpServerUrl.toString())
 
 //    init {

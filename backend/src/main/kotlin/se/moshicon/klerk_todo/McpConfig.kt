@@ -13,7 +13,7 @@ object McpServerConfig {
     const val PORT = 8081
 
     /** Full URL for the MCP server */
-    const val URL = "http://localhost:$PORT"
+    private const val URL = "http://127.0.0.1:$PORT"
 
     /** Server name for MCP identification */
     const val SERVER_NAME = "TODO application"
