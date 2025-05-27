@@ -27,12 +27,19 @@ object McpServerConfig {
 /* Configuration object for MCP clients */
 object McpClientConfig {
     private const val DEFAULT_LLM_URL = "http://localhost:11434"
+    private const val DEFAULT_LLM_MODEL = "gemma3:1b-it-qat"
 
     /**
      * LLM server URL that MCP client should use.
      */
     val llmServerUrl: String
         get() = System.getenv("LLM_URL") ?: DEFAULT_LLM_URL
+
+    /**
+     * LLM model name to use for chat completions.
+     */
+    val llmModel: String
+        get() = System.getenv("LLM_MODEL") ?: DEFAULT_LLM_MODEL
 
     /** The MCP server URL for the client to connect to */
     val mcpServerUrl: String
