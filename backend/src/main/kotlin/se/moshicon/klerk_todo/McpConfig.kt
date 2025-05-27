@@ -1,7 +1,5 @@
 package se.moshicon.klerk_todo
 
-import se.moshicon.klerk_todo.McpServerConfig.getServerUrl
-
 /**
  * Configuration constants for the MCP (Model Context Protocol) server.
  */
@@ -38,5 +36,5 @@ object McpClientConfig {
 
     /** The MCP server URL for the client to connect to */
     val mcpServerUrl: String
-        get() = getServerUrl()
+        get() = McpServerConfig.getServerUrl()
 }
