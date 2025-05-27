@@ -89,6 +89,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
       setError(null);
       await chatApi.clearHistory();
       setMessages([]);
+      // Focus the input field after clearing
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     } catch (err) {
       console.error('Failed to clear chat history:', err);
       setError('Failed to clear chat history');

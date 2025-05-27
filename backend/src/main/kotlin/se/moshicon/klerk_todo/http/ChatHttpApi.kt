@@ -54,7 +54,7 @@ private suspend fun addNewChatMessage(call: ApplicationCall) {
     }
 }
 
-private fun handleChatMessage(chatSession : ChatSession, message: ChatMessage): ChatMessage {
+private fun handleChatMessage(chatSession: ChatSession, message: ChatMessage): ChatMessage {
     chatSession.addMessage(message)
     val responseMessage = ChatMessage(
         content = "You said ${message.content}."
