@@ -66,9 +66,10 @@ fun Application.configureHttpRouting(klerk: Klerk<Ctx, Data>, mcpServerConfig: M
                 route("/todos") {
                     apply(registerTodoRoutes(klerk))
                 }
-                route("/chat") {
-                    apply(registerChatRoutes(klerk, mcpServerConfig))
-                }
+
+            }
+            route("/chat") {
+                apply(registerChatRoutes(klerk, mcpServerConfig))
             }
         }
 

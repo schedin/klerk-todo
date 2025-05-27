@@ -32,8 +32,7 @@ object ChatSessionManager {
             }
         }
         logger.info("Chat session manager initialized")
-
-    }
+}
     
     /**
      * Stops the session manager and cancels cleanup
@@ -47,7 +46,7 @@ object ChatSessionManager {
     /**
      * Gets or creates a session for the given user
      */
-    fun getOrCreateSession(userId: String): ChatSession {
+    private fun getOrCreateSession(userId: String): ChatSession {
         // Check if user already has an active session
         val existingSessionId = userSessions[userId]
         if (existingSessionId != null) {
@@ -73,7 +72,7 @@ object ChatSessionManager {
     /**
      * Gets a session by session ID
      */
-    fun getSession(sessionId: String): ChatSession? {
+    private fun getSession(sessionId: String): ChatSession? {
         val session = sessions[sessionId]
         if (session != null && !session.isExpired(SESSION_TIMEOUT_MINUTES)) {
             session.touch()

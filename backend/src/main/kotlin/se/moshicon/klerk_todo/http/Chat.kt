@@ -46,10 +46,14 @@ fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig
             val message = ChatMessage(
                 content = request.content.trim()
             )
-
             ChatSessionManager.addMessage(userId, message)
 
-            call.respond(HttpStatusCode.OK, ChatMessageResponse(message))
+            val responseMessage = ChatMessage(
+                content = "You said ${request.content}."
+            )
+            ChatSessionManager.addMessage(userId, responseMessage)
+
+            call.respond(HttpStatusCode.OK, ChatMessageResponse(responseMessage))
         } catch (e: Exception) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send message: ${e.message}"))
         }
@@ -67,32 +71,33 @@ fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig
         }
     }
 
-    // Get session statistics (for debugging/monitoring)
-    get("/stats") {
-        try {
-            val stats = ChatSessionManager.getSessionStats()
-            call.respond(HttpStatusCode.OK, stats)
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to get stats: ${e.message}"))
-        }
-    }
+//    // Get session statistics (for debugging/monitoring)
+//    get("/stats") {
+//        try {
+//            val stats = ChatSessionManager.getSessionStats()
+//            call.respond(HttpStatusCode.OK, stats)
+//        } catch (e: Exception) {
+//            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to get stats: ${e.message}"))
+//        }
+//    }
 }
 
 /**
  * Helper function to extract user ID from JWT token
  */
 private suspend fun getUserIdFromCall(call: ApplicationCall): String? {
-    val principal = call.principal<JWTPrincipal>()
-    if (principal == null) {
-        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Authentication required"))
-        return null
-    }
+    return "Alice"
 
-    val userId = principal.payload.getClaim("sub").asString()
-    if (userId.isNullOrBlank()) {
-        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid token: missing user ID"))
-        return null
-    }
-
-    return userId
+//    val principal = call.principal<JWTPrincipal>()
+//    if (principal == null) {
+//        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Authentication required"))
+//        return null
+//    }
+//
+//    val userId = principal.payload.getClaim("sub").asString()
+//    if (userId.isNullOrBlank()) {
+//        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid token: missing user ID"))
+//        return null
+//    }
+//    return userId
 }
