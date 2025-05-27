@@ -51,7 +51,7 @@ fun main() {
         install(ContentNegotiation) {
             json()
         }
-        configureHttpRouting(klerk)
+        configureHttpRouting(klerk, McpConfig)
 
 
     }.start(wait = true)
