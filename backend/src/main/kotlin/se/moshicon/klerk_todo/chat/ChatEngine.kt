@@ -121,9 +121,15 @@ class ChatEngine(
         val messages = mutableListOf<ChatCompletionMessageParam>()
 
         // Add system message
-        messages.add(ChatCompletionSystemMessageParam.builder()
-            .content("You are a helpful assistant that can manage TODO items. You have access to tools that allow you to create, list, and manage TODOs. Use these tools when the user asks about TODO management.")
-            .build() as ChatCompletionMessageParam)
+        messages.add(
+            ChatCompletionMessageParam.ofSystem(ChatCompletionSystemMessageParam.builder()
+                .content("""You are a helpful assistant that can manage TODO items.
+                    You have access to tools that allow you to create, list, and manage TODOs.
+                    Use these tools when the user asks about TODO management."""
+                )
+                .build()
+            )
+        )
 
         // Convert chat history to alternating user/assistant messages
         chatSession.getHistory().forEachIndexed { index, msg ->
