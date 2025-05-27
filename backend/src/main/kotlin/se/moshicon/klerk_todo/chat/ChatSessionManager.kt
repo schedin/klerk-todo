@@ -46,7 +46,7 @@ object ChatSessionManager {
     /**
      * Gets or creates a session for the given user
      */
-    private fun getOrCreateSession(userId: String): ChatSession {
+    fun getOrCreateSession(userId: String): ChatSession {
         // Check if user already has an active session
         val existingSessionId = userSessions[userId]
         if (existingSessionId != null) {
@@ -91,45 +91,17 @@ object ChatSessionManager {
         val sessionId = userSessions[userId] ?: return null
         return getSession(sessionId)
     }
-    
-    /**
-     * Adds a message to a user's session
-     */
-    fun addMessage(userId: String, message: ChatMessage): ChatSession {
-        val session = getOrCreateSession(userId)
-        session.addMessage(message)
-        return session
-    }
-    
-    /**
-     * Clears the chat history for a user's session
-     */
-    fun clearSession(userId: String): ChatSession? {
-        val session = getSessionByUserId(userId)
-        session?.clearHistory()
-        return session
-    }
-    
+
     /**
      * Removes a specific session
      */
-    fun removeSession(sessionId: String) {
+    private fun removeSession(sessionId: String) {
         val session = sessions.remove(sessionId)
         if (session != null) {
             userSessions.remove(session.userId)
         }
     }
-    
-    /**
-     * Removes all sessions for a specific user
-     */
-    fun removeUserSessions(userId: String) {
-        val sessionId = userSessions.remove(userId)
-        if (sessionId != null) {
-            sessions.remove(sessionId)
-        }
-    }
-    
+
     /**
      * Gets statistics about current sessions
      */

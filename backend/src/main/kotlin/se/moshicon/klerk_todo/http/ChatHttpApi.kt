@@ -42,30 +42,33 @@ private suspend fun addNewChatMessage(call: ApplicationCall) {
             return
         }
 
-        val message = ChatMessage(
+        val chatMessage = ChatMessage(
             content = request.content.trim()
         )
-        ChatSessionManager.addMessage(userId, message)
 
-        val responseMessage = handleChatMessage(request)
-        ChatSessionManager.addMessage(userId, responseMessage)
-        call.respond(HttpStatusCode.OK, ChatMessageResponse(message))
+        val chatSession = ChatSessionManager.getOrCreateSession(userId)
+        val responseMessage = handleChatMessage(chatSession, chatMessage)
+        call.respond(HttpStatusCode.OK, ChatMessageResponse(responseMessage))
     } catch (e: Exception) {
         call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send message: ${e.message}"))
     }
 }
 
-private fun handleChatMessage(request: ChatMessageRequest): ChatMessage {
+private fun handleChatMessage(chatSession : ChatSession, message: ChatMessage): ChatMessage {
+    chatSession.addMessage(message)
     val responseMessage = ChatMessage(
-        content = "You said ${request.content}."
+        content = "You said ${message.content}."
     )
+    chatSession.addMessage(responseMessage)
     return responseMessage
 }
 
 private suspend fun clearChatHistory(call: ApplicationCall) {
     val userId = getUserIdFromCall(call) ?: return
+
     try {
-        ChatSessionManager.clearSession(userId)
+        val chatSession = ChatSessionManager.getSessionByUserId(userId)
+        chatSession?.clearHistory()
         call.respond(HttpStatusCode.OK, mapOf("message" to "Chat history cleared successfully"))
     } catch (e: Exception) {
         call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to clear history: ${e.message}"))
