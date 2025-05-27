@@ -207,6 +207,10 @@ function App() {
   // Add login/logout handlers
   const handleLogin = (username: string) => {
     setCurrentUser(username);
+    // Clear all error states when logging in to ensure a clean slate
+    setError(null);
+    setFormError(null);
+    setTodoErrors({});
   };
 
   const handleLogout = () => {
