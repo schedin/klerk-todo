@@ -16,6 +16,7 @@ import se.moshicon.klerk_todo.users.UserName
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 
+private const val MAX_GLOBAL_TODOS = 3
 
 enum class TodoStates {
     Created,
@@ -27,6 +28,7 @@ val todoStateMachine = stateMachine {
     event(CreateTodo) {
         validateWithParameters(::titleCannotContainOnlyWhitespaces)
         validateWithParameters(::titleCannotContainBannedWords)
+        validate(::validateMaxTodoLimit)
     }
     event(MarkComplete) {
         validate(::rateLimitCompletionStatus)
@@ -126,6 +128,14 @@ fun titleCannotContainBannedWords(args: ArgForVoidEvent<Todo, CreateTodoParams, 
         if (titleString.lowercase().contains(word)) {
             return Validity.Invalid("Title cannot contain the banned word '$word'")
         }
+    }
+    return Validity.Valid
+}
+
+fun validateMaxTodoLimit(args: ArgForVoidEvent<Todo, Nothing?, Ctx, Data>): Validity {
+    val totalTodoCount = args.reader.list(args.reader.data.todos.all).size
+    if (totalTodoCount >= MAX_GLOBAL_TODOS) {
+        return Validity.Invalid("Cannot create TODO: system already has $totalTodoCount TODOs (maximum $MAX_GLOBAL_TODOS allowed)")
     }
     return Validity.Valid
 }
