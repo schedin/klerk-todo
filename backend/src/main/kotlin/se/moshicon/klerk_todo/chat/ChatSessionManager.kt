@@ -1,7 +1,10 @@
 package se.moshicon.klerk_todo.chat
 
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
+import se.moshicon.klerk_todo.McpClientConfig
+import se.moshicon.klerk_todo.McpServerConfig
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.minutes
@@ -13,7 +16,9 @@ object ChatSessionManager {
     private val logger = LoggerFactory.getLogger(ChatSessionManager::class.java)
     private val sessions = ConcurrentHashMap<String, ChatSession>()
     private val userSessions = ConcurrentHashMap<String, String>() // userId -> sessionId
-    val chatEngine = ChatEngine()
+    val chatEngine = ChatEngine(
+        Url(McpServerConfig.getServerUrl()), Url(McpClientConfig.llmServerUrl)
+    )
     
     // Configuration
     private const val SESSION_TIMEOUT_MINUTES = 30L
