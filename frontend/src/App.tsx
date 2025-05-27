@@ -212,6 +212,10 @@ function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     removeAuthToken();
+    // Clear all error states when logging out
+    setError(null);
+    setFormError(null);
+    setTodoErrors({});
   };
 
   // If no user is logged in, show the login screen
