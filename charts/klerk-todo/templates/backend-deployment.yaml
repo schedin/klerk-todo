@@ -27,6 +27,6 @@ spec:
           protocol: TCP
         env:
         - name: LLM_URL
-          value: "http://llm:11434"
+          value: "{{ .Values.backend.llmServerUrl }}"
         - name: DATABASE_PATH
           value: "/deployments/data/klerk-todo.sqlite"

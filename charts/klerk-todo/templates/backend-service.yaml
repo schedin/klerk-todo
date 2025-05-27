@@ -4,7 +4,7 @@ metadata:
   name: backend
   labels:
     app.kubernetes.io/name: klerk-todo
-    app.kubernetes.io/component: backend    
+    app.kubernetes.io/component: backend
 spec:
   type: ClusterIP
   ports:
