@@ -15,7 +15,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import se.moshicon.klerk_todo.Ctx
 import se.moshicon.klerk_todo.Data
-import se.moshicon.klerk_todo.McpConfig
+import se.moshicon.klerk_todo.McpServerConfig
 import se.moshicon.klerk_todo.users.*
 
 // JWT configuration constants
@@ -25,7 +25,7 @@ private const val JWT_SECRET = "your-secret-key"
 private const val JWT_ISSUER = "todo-app"
 private const val JWT_AUDIENCE = "todo-app-users"
 
-fun Application.configureHttpRouting(klerk: Klerk<Ctx, Data>, mcpConfig: McpConfig) {
+fun Application.configureHttpRouting(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig) {
     // Configure JWT authentication
     install(Authentication) {
         jwt("auth-jwt") {
@@ -67,7 +67,7 @@ fun Application.configureHttpRouting(klerk: Klerk<Ctx, Data>, mcpConfig: McpConf
                     apply(registerTodoRoutes(klerk))
                 }
                 route("/chat") {
-                    apply(registerChatRoutes(klerk, mcpConfig))
+                    apply(registerChatRoutes(klerk, mcpServerConfig))
                 }
             }
         }

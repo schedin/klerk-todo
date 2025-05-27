@@ -1,12 +1,11 @@
 package se.moshicon.klerk_todo
 
+import se.moshicon.klerk_todo.McpServerConfig.getServerUrl
+
 /**
  * Configuration constants for the MCP (Model Context Protocol) server.
- *
- * The MCP server runs separately from the main API server to provide
- * AI tools and resources for external clients.
  */
-object McpConfig {
+object McpServerConfig {
     /** Host address for the MCP server */
     const val HOST = "0.0.0.0"
 
@@ -21,4 +20,23 @@ object McpConfig {
 
     /** Server version for MCP identification */
     const val SERVER_VERSION = "1.0.0"
+
+    fun getServerUrl(): String {
+        return URL
+    }
+}
+
+/* Configuration object for MCP clients */
+object McpClientConfig {
+    private const val DEFAULT_LLM_URL = "http://localhost:11434"
+
+    /**
+     * LLM server URL that MCP client should use.
+     */
+    val llmServerUrl: String
+        get() = System.getenv("LLM_URL") ?: DEFAULT_LLM_URL
+
+    /** The MCP server URL for the client to connect to */
+    val mcpServerUrl: String
+        get() = getServerUrl()
 }

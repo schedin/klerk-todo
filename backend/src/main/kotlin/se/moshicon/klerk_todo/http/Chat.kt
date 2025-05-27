@@ -5,10 +5,10 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.*
 import se.moshicon.klerk_todo.Ctx
 import se.moshicon.klerk_todo.Data
-import se.moshicon.klerk_todo.McpConfig
+import se.moshicon.klerk_todo.McpServerConfig
 
 
-fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpConfig: McpConfig): Route.() -> Unit = {
+fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig): Route.() -> Unit = {
     get("/{...}") {
         print("Get with Url ${call.request}")
         //getTodos(call, klerk)

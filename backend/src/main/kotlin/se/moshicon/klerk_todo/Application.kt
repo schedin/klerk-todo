@@ -51,32 +51,32 @@ fun main() {
         install(ContentNegotiation) {
             json()
         }
-        configureHttpRouting(klerk, McpConfig)
+        configureHttpRouting(klerk, McpServerConfig)
 
 
     }.start(wait = true)
 }
 
 fun startMcpServer(klerk: Klerk<Ctx, Data>) {
-    logger.info("Starting MCP server on port ${McpConfig.PORT}...")
+    logger.info("Starting MCP server on port ${McpServerConfig.PORT}...")
 
     suspend fun contextProvider(command: dev.klerkframework.klerk.command.Command<*, *>?): Ctx {
         val user = findOrCreateUser(klerk, "Alice")
         return Ctx(GroupModelIdentity(model = user, groups = listOf("admins", "users")))
     }
 
-    val mcpServer = createMcpServer(klerk, ::contextProvider, McpConfig.SERVER_NAME, McpConfig.SERVER_VERSION)
+    val mcpServer = createMcpServer(klerk, ::contextProvider, McpServerConfig.SERVER_NAME, McpServerConfig.SERVER_VERSION)
 
     // Start MCP server in a separate thread so it doesn't block the main server
     Thread {
-        embeddedServer(Netty, port = McpConfig.PORT, host = McpConfig.HOST) {
+        embeddedServer(Netty, port = McpServerConfig.PORT, host = McpServerConfig.HOST) {
             mcp {
                 mcpServer
             }
         }.start(wait = true)
     }.start()
 
-    logger.info("MCP server started at ${McpConfig.URL}")
+    logger.info("MCP server started at ${McpServerConfig.URL}")
 }
 
 
