@@ -32,15 +32,14 @@ fun main() {
     }
 //    performanceInsertTest(klerk)
 
-    ChatSessionManager.initialize(GlobalScope)
+    startMcpServer(klerk)
 
-    // Add shutdown hook to clean up session manager
+    ChatSessionManager.initialize(GlobalScope)
     Runtime.getRuntime().addShutdownHook(Thread {
         logger.info("Shutting down chat session manager...")
         ChatSessionManager.shutdown()
     })
 
-    startMcpServer(klerk)
     embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         // Configure CORS to allow frontend requests
         install(CORS) {
