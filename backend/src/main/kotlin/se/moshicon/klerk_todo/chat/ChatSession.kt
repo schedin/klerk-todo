@@ -11,19 +11,8 @@ import java.util.*
 data class ChatMessage(
     val id: String = UUID.randomUUID().toString(),
     val content: String,
-    val role: MessageRole,
     val timestamp: Long = Instant.now().epochSecond
 )
-
-/**
- * Enum representing the role of a message sender
- */
-@Serializable
-enum class MessageRole {
-    USER,
-    ASSISTANT,
-    SYSTEM
-}
 
 /**
  * Represents a chat session for a specific user
@@ -77,30 +66,15 @@ data class ChatSession(
  */
 @Serializable
 data class ChatMessageRequest(
-    val content: String,
-    val role: MessageRole = MessageRole.USER
+    val content: String
 )
 
 @Serializable
 data class ChatMessageResponse(
-    val message: ChatMessage,
-    val sessionId: String
+    val message: ChatMessage
 )
 
 @Serializable
-data class ChatSessionResponse(
-    val sessionId: String,
-    val messages: List<ChatMessage>,
-    val createdAt: Long,
-    val lastAccessedAt: Long
-)
-
-/**
- * Extension function to convert ChatSession to ChatSessionResponse
- */
-fun ChatSession.toResponse(): ChatSessionResponse = ChatSessionResponse(
-    sessionId = sessionId,
-    messages = messages,
-    createdAt = createdAt.epochSecond,
-    lastAccessedAt = lastAccessedAt.epochSecond
+data class ChatHistoryResponse(
+    val messages: List<ChatMessage>
 )

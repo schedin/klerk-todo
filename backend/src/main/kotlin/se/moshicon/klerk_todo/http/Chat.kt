@@ -17,29 +17,14 @@ import se.moshicon.klerk_todo.chat.*
 
 fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig): Route.() -> Unit = {
 
-    // Get current session or create new one
-    get("/session") {
-        val userId = getUserIdFromCall(call) ?: return@get
-
-        try {
-            val session = ChatSessionManager.getOrCreateSession(userId)
-            call.respond(HttpStatusCode.OK, session.toResponse())
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to get session: ${e.message}"))
-        }
-    }
-
-    // Get session history
+    // Get chat history
     get("/history") {
         val userId = getUserIdFromCall(call) ?: return@get
 
         try {
             val session = ChatSessionManager.getSessionByUserId(userId)
-            if (session != null) {
-                call.respond(HttpStatusCode.OK, session.toResponse())
-            } else {
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "No active session found"))
-            }
+            val messages = session?.getHistory() ?: emptyList()
+            call.respond(HttpStatusCode.OK, ChatHistoryResponse(messages))
         } catch (e: Exception) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to get history: ${e.message}"))
         }
@@ -59,34 +44,26 @@ fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig
             }
 
             val message = ChatMessage(
-                content = request.content.trim(),
-                role = request.role
+                content = request.content.trim()
             )
 
-            val session = ChatSessionManager.addMessage(userId, message)
+            ChatSessionManager.addMessage(userId, message)
 
-            call.respond(HttpStatusCode.OK, ChatMessageResponse(
-                message = message,
-                sessionId = session.sessionId
-            ))
+            call.respond(HttpStatusCode.OK, ChatMessageResponse(message))
         } catch (e: Exception) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send message: ${e.message}"))
         }
     }
 
-    // Clear session history
-    delete("/session") {
+    // Clear chat history
+    delete("/history") {
         val userId = getUserIdFromCall(call) ?: return@delete
 
         try {
-            val session = ChatSessionManager.clearSession(userId)
-            if (session != null) {
-                call.respond(HttpStatusCode.OK, mapOf("message" to "Session cleared successfully"))
-            } else {
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "No active session found"))
-            }
+            ChatSessionManager.clearSession(userId)
+            call.respond(HttpStatusCode.OK, mapOf("message" to "Chat history cleared successfully"))
         } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to clear session: ${e.message}"))
+            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to clear history: ${e.message}"))
         }
     }
 
