@@ -5,6 +5,7 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.sse.*
 import io.ktor.http.*
 import io.modelcontextprotocol.kotlin.sdk.Implementation
+import io.modelcontextprotocol.kotlin.sdk.Tool
 import org.slf4j.LoggerFactory
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.client.SseClientTransport
@@ -17,11 +18,12 @@ class ChatEngine(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val mcp: Client = Client(clientInfo = Implementation(name = "mcp-todo-chat-client", version = "1.0.0"))
-    val httpClient = HttpClient(CIO) {
+    private val httpClient = HttpClient(CIO) {
         install(SSE)
     }
     private var transport: SseClientTransport? = null
     private var isConnected = false
+    private var tools: List<Tool> = emptyList()
 
 //    init {
 //        logger.info(mcp.toString())
@@ -46,12 +48,9 @@ class ChatEngine(
                 mcp.connect(transport!!)
 
                 val toolsResult = mcp.listTools()
-                toolsResult?.tools?.forEach {
-                    logger.info("Tool: ${it.name}")
-                }
-
+                tools = toolsResult?.tools ?: emptyList()
                 isConnected = true
-                logger.info("Successfully connected to MCP server")
+                logger.info("Successfully connected to MCP server and fetched ${tools.size} tools")
                 return
             } catch (e: Exception) {
                 logger.warn("Failed to connect to MCP server (attempt ${attempt + 1}/$maxRetries): ${e.message}")
