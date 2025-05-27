@@ -1,11 +1,7 @@
 package se.moshicon.klerk_todo
 
-import dev.klerkframework.klerk.AuthenticationIdentity
+
 import dev.klerkframework.klerk.Klerk
-import dev.klerkframework.klerk.SystemIdentity
-import dev.klerkframework.klerk.command.Command
-import dev.klerkframework.klerk.command.CommandToken
-import dev.klerkframework.klerk.command.ProcessingOptions
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -15,16 +11,14 @@ import io.ktor.server.application.*
 import io.ktor.http.*
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import se.moshicon.klerk_todo.http.configureHttpRouting
 import se.moshicon.klerk_todo.http.findOrCreateUser
-import se.moshicon.klerk_todo.notes.*
 import se.moshicon.klerk_todo.users.*
 import se.moshicon.klerk_mcp.createMcpServer
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
-import kotlin.time.measureTime
 
+private const val MCP_SERVER_PORT = 8081
 private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.Application")
 
 fun main() {
@@ -65,7 +59,7 @@ fun main() {
 }
 
 fun startMcpServer(klerk: Klerk<Ctx, Data>) {
-    logger.info("Starting MCP server on port 8081...")
+    logger.info("Starting MCP server on port $MCP_SERVER_PORT...")
 
     suspend fun contextProvider(command: dev.klerkframework.klerk.command.Command<*, *>?): Ctx {
         val user = findOrCreateUser(klerk, "Alice")
@@ -76,14 +70,14 @@ fun startMcpServer(klerk: Klerk<Ctx, Data>) {
 
     // Start MCP server in a separate thread so it doesn't block the main server
     Thread {
-        embeddedServer(Netty, port = 8081, host = "0.0.0.0") {
+        embeddedServer(Netty, port = MCP_SERVER_PORT, host = "0.0.0.0") {
             mcp {
                 mcpServer
             }
         }.start(wait = true)
     }.start()
 
-    logger.info("MCP server started on port 8081")
+    logger.info("MCP server started on port $MCP_SERVER_PORT")
 }
 
 
