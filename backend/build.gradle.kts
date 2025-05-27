@@ -48,6 +48,7 @@ dependencies {
     implementation("com.auth0:java-jwt:$jwt_version")
 
     implementation("io.modelcontextprotocol:kotlin-sdk:${property("mcp_sdk_version")}") // MCP SDK
+    implementation("com.openai:openai-java:2.2.0") // OpenAI Java client for LLM integration
 
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
