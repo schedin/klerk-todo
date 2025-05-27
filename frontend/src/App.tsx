@@ -6,6 +6,8 @@ import { todoApi } from './services/api';
 import TodoList from './components/TodoList';
 import TodoForm from './components/TodoForm';
 import Login from './components/Login';
+import ChatButton from './components/ChatButton';
+import ChatDialog from './components/ChatDialog';
 import { getCurrentUser, removeAuthToken, isAdmin } from './services/auth';
 
 function App() {
@@ -19,6 +21,8 @@ function App() {
   const [formError, setFormError] = useState<string | null>(null);
   // Track errors for individual todo items
   const [todoErrors, setTodoErrors] = useState<Record<string, string>>({});
+  // Chat state
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
 
   // Fetch todos on component mount if user is logged in
   useEffect(() => {
@@ -220,6 +224,8 @@ function App() {
     setError(null);
     setFormError(null);
     setTodoErrors({});
+    // Close chat dialog when logging out
+    setIsChatOpen(false);
   };
 
   // If no user is logged in, show the login screen
@@ -371,6 +377,17 @@ function App() {
           todoErrors={todoErrors}
         />
       )}
+
+      {/* Chat Components */}
+      <ChatButton
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        isOpen={isChatOpen}
+      />
+      <ChatDialog
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        currentUser={currentUser}
+      />
     </div>
   );
 }

@@ -86,18 +86,16 @@ fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig
  * Helper function to extract user ID from JWT token
  */
 private suspend fun getUserIdFromCall(call: ApplicationCall): String? {
-    return "Alice"
+    val principal = call.principal<JWTPrincipal>()
+    if (principal == null) {
+        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Authentication required"))
+        return null
+    }
 
-//    val principal = call.principal<JWTPrincipal>()
-//    if (principal == null) {
-//        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Authentication required"))
-//        return null
-//    }
-//
-//    val userId = principal.payload.getClaim("sub").asString()
-//    if (userId.isNullOrBlank()) {
-//        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid token: missing user ID"))
-//        return null
-//    }
-//    return userId
+    val userId = principal.payload.getClaim("sub").asString()
+    if (userId.isNullOrBlank()) {
+        call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid token: missing user ID"))
+        return null
+    }
+    return userId
 }
