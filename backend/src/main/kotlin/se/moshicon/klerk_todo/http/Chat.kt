@@ -72,9 +72,7 @@ private suspend fun clearChatHistory(call: ApplicationCall) {
     }
 }
 
-/**
- * Helper function to extract user ID from JWT token
- */
+/** Helper function to extract user ID from JWT token */
 private suspend fun getUserIdFromCall(call: ApplicationCall): String? {
     val principal = call.principal<JWTPrincipal>()
     if (principal == null) {
