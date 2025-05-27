@@ -18,7 +18,6 @@ import se.moshicon.klerk_todo.users.*
 import se.moshicon.klerk_mcp.createMcpServer
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
 
-private const val MCP_SERVER_PORT = 8081
 private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.Application")
 
 fun main() {
@@ -59,25 +58,25 @@ fun main() {
 }
 
 fun startMcpServer(klerk: Klerk<Ctx, Data>) {
-    logger.info("Starting MCP server on port $MCP_SERVER_PORT...")
+    logger.info("Starting MCP server on port ${McpConfig.PORT}...")
 
     suspend fun contextProvider(command: dev.klerkframework.klerk.command.Command<*, *>?): Ctx {
         val user = findOrCreateUser(klerk, "Alice")
         return Ctx(GroupModelIdentity(model = user, groups = listOf("admins", "users")))
     }
 
-    val mcpServer = createMcpServer(klerk, ::contextProvider, "TODO application", "1.0.0")
+    val mcpServer = createMcpServer(klerk, ::contextProvider, McpConfig.SERVER_NAME, McpConfig.SERVER_VERSION)
 
     // Start MCP server in a separate thread so it doesn't block the main server
     Thread {
-        embeddedServer(Netty, port = MCP_SERVER_PORT, host = "0.0.0.0") {
+        embeddedServer(Netty, port = McpConfig.PORT, host = McpConfig.HOST) {
             mcp {
                 mcpServer
             }
         }.start(wait = true)
     }.start()
 
-    logger.info("MCP server started on port $MCP_SERVER_PORT")
+    logger.info("MCP server started at ${McpConfig.URL}")
 }
 
 
