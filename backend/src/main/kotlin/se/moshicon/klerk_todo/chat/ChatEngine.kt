@@ -120,28 +120,41 @@ class ChatEngine(
     private fun convertChatHistoryToOpenAiMessages(chatSession: ChatSession): MutableList<ChatCompletionMessageParam> {
         val messages = mutableListOf<ChatCompletionMessageParam>()
 
-        // Add system message
-        messages.add(
-            ChatCompletionMessageParam.ofSystem(ChatCompletionSystemMessageParam.builder()
-                .content("""You are a helpful assistant that can manage TODO items.
-                    You have access to tools that allow you to create, list, and manage TODOs.
-                    Use these tools when the user asks about TODO management."""
+        // Add system message if no internal messages exist yet
+        if (chatSession.getInternalHistory().isEmpty()) {
+            messages.add(
+                ChatCompletionMessageParam.ofSystem(ChatCompletionSystemMessageParam.builder()
+                    .content("""You are a helpful assistant that can manage TODO items.
+                        You have access to tools that allow you to create, list, and manage TODOs.
+                        Use these tools when the user asks about TODO management."""
+                    )
+                    .build()
                 )
-                .build()
             )
-        )
+        }
 
-        // Convert chat history to alternating user/assistant messages
-        chatSession.getHistory().forEachIndexed { index, msg ->
-            if (index % 2 == 0) {
-                messages.add(ChatCompletionUserMessageParam.builder()
-                    .content(msg.content)
-                    .build() as ChatCompletionMessageParam)
-            } else {
-                messages.add(ChatCompletionAssistantMessageParam.builder()
-                    .content(msg.content)
-                    .build() as ChatCompletionMessageParam)
-            }
+        // Use internal messages if available, otherwise convert browser messages
+        val internalHistory = chatSession.getInternalHistory()
+        if (internalHistory.isNotEmpty()) {
+            messages.addAll(internalHistory)
+        } else {
+            throw Exception("Not implemented")
+            // Convert browser messages to internal format for first-time use
+//            chatSession.getHistory().forEach { browserMsg ->
+//                val messageParam = when (browserMsg.sender) {
+//                    MessageSender.USER -> ChatCompletionMessageParam.ofUser(
+//                        ChatCompletionUserMessageParam.builder()
+//                            .content(browserMsg.content)
+//                            .build()
+//                    )
+//                    MessageSender.ASSISTANT -> ChatCompletionMessageParam.ofAssistant(
+//                        ChatCompletionAssistantMessageParam.builder()
+//                            .content(browserMsg.content)
+//                            .build()
+//                    )
+//                }
+//                messages.add(messageParam)
+//            }
         }
 
         return messages
@@ -167,8 +180,17 @@ class ChatEngine(
         return result as? CallToolResult ?: throw RuntimeException("Tool call failed: $result")
     }
 
-    suspend fun handleChatMessage(chatSession: ChatSession, message: se.moshicon.klerk_todo.chat.ChatMessage): se.moshicon.klerk_todo.chat.ChatMessage {
-        chatSession.addMessage(message)
+    suspend fun handleChatMessage(chatSession: ChatSession, message: se.moshicon.klerk_todo.chat.ChatMessage): BrowserChatMessage {
+        // Add user message to internal message list
+        val userInternalMessage = InternalChatMessage(
+            messageParam = ChatCompletionMessageParam.ofUser(
+                ChatCompletionUserMessageParam.builder()
+                    .content(message.content)
+                    .build()
+            ),
+            timestamp = message.timestamp
+        )
+        chatSession.addInternalMessage(userInternalMessage)
 
         try {
             // Ensure MCP connection is established
@@ -211,10 +233,16 @@ class ChatEngine(
                     val updatedMessages = openAiMessages.toMutableList()
 
                     // Add the assistant message with tool calls
-                    updatedMessages.add(ChatCompletionAssistantMessageParam.builder()
-                        .content(assistantMessage.content().orElse(""))
-                        .toolCalls(toolCallsList)
-                        .build() as ChatCompletionMessageParam)
+                    val assistantWithToolCallsParam = ChatCompletionMessageParam.ofAssistant(
+                        ChatCompletionAssistantMessageParam.builder()
+                            .content(assistantMessage.content().orElse(""))
+                            .toolCalls(toolCallsList)
+                            .build()
+                    )
+                    updatedMessages.add(assistantWithToolCallsParam)
+
+                    // Store the assistant message with tool calls in internal history
+                    chatSession.addInternalMessage(InternalChatMessage(messageParam = assistantWithToolCallsParam))
 
                     // Execute each tool call and add results
                     for (toolCall in toolCallsList) {
@@ -229,10 +257,16 @@ class ChatEngine(
                         val toolResult = executeMcpTool(function.name(), arguments)
 
                         // Add tool result message
-                        updatedMessages.add(ChatCompletionToolMessageParam.builder()
-                            .toolCallId(toolCall.id())
-                            .content(toolResult.content.joinToString("\n") { it.toString() })
-                            .build() as ChatCompletionMessageParam)
+                        val toolResultParam = ChatCompletionMessageParam.ofTool(
+                            ChatCompletionToolMessageParam.builder()
+                                .toolCallId(toolCall.id())
+                                .content(toolResult.content.joinToString("\n") { it.toString() })
+                                .build()
+                        )
+                        updatedMessages.add(toolResultParam)
+
+                        // Store the tool result in internal history
+                        chatSession.addInternalMessage(InternalChatMessage(messageParam = toolResultParam))
                     }
 
                     // Get final response from LLM
@@ -245,36 +279,54 @@ class ChatEngine(
                     val finalChoice = finalCompletion.choices().firstOrNull()
                         ?: throw RuntimeException("No final response from LLM")
 
-                    val responseMessage = se.moshicon.klerk_todo.chat.ChatMessage(
-                        content = finalChoice.message().content().orElse("I executed the requested action.")
+                    val finalResponseContent = finalChoice.message().content().orElse("I executed the requested action.")
+
+                    // Store the final assistant response in internal history
+                    val finalAssistantParam = ChatCompletionMessageParam.ofAssistant(
+                        ChatCompletionAssistantMessageParam.builder()
+                            .content(finalResponseContent)
+                            .build()
                     )
-                    chatSession.addMessage(responseMessage)
-                    return responseMessage
+                    chatSession.addInternalMessage(InternalChatMessage(messageParam = finalAssistantParam))
+
+                    // Return the browser message by converting from the last internal message
+                    return chatSession.getHistory().lastOrNull() ?: BrowserChatMessage(
+                        content = finalResponseContent,
+                        sender = MessageSender.ASSISTANT
+                    )
 
                 } catch (e: Exception) {
                     logger.error("Error executing tool calls: ${e.message}", e)
-                    val errorMessage = se.moshicon.klerk_todo.chat.ChatMessage(
-                        content = "I encountered an error while trying to execute that action: ${e.message}"
+                    return BrowserChatMessage(
+                        content = "I encountered an error while trying to execute that action: ${e.message}",
+                        sender = MessageSender.ASSISTANT
                     )
-                    chatSession.addMessage(errorMessage)
-                    return errorMessage
                 }
             } else {
                 // Direct response from LLM without tool calls
-                val responseMessage = se.moshicon.klerk_todo.chat.ChatMessage(
-                    content = assistantMessage.content().orElse("I'm not sure how to respond to that.")
+                val responseContent = assistantMessage.content().orElse("I'm not sure how to respond to that.")
+
+                // Store the assistant response in internal history
+                val assistantParam = ChatCompletionMessageParam.ofAssistant(
+                    ChatCompletionAssistantMessageParam.builder()
+                        .content(responseContent)
+                        .build()
                 )
-                chatSession.addMessage(responseMessage)
-                return responseMessage
+                chatSession.addInternalMessage(InternalChatMessage(messageParam = assistantParam))
+
+                // Return the browser message by converting from the last internal message
+                return chatSession.getHistory().lastOrNull() ?: BrowserChatMessage(
+                    content = responseContent,
+                    sender = MessageSender.ASSISTANT
+                )
             }
 
         } catch (e: Exception) {
             logger.error("Error in LLM chat processing: ${e.message}", e)
-            val fallbackMessage = se.moshicon.klerk_todo.chat.ChatMessage(
-                content = "I'm sorry, I encountered an error while processing your message. Please try again."
+            return BrowserChatMessage(
+                content = "I'm sorry, I encountered an error while processing your message. Please try again.",
+                sender = MessageSender.ASSISTANT
             )
-            chatSession.addMessage(fallbackMessage)
-            return fallbackMessage
         }
     }
 }

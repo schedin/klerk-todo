@@ -1,6 +1,12 @@
+export enum MessageSender {
+  USER = 'USER',
+  ASSISTANT = 'ASSISTANT'
+}
+
 export interface ChatMessage {
   id: string;
   content: string;
+  sender: MessageSender;
   timestamp: number;
 }
 

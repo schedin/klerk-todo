@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatMessage as ChatMessageType } from '../types/chat';
+import { ChatMessage as ChatMessageType, MessageSender } from '../types/chat';
 import { chatApi } from '../services/chatApi';
 import ChatMessage from './ChatMessage';
 
@@ -61,6 +61,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
       const userMessage: ChatMessageType = {
         id: `temp-${Date.now()}`,
         content: messageContent,
+        sender: MessageSender.USER,
         timestamp: Math.floor(Date.now() / 1000),
       };
       setMessages(prev => [...prev, userMessage]);
@@ -208,18 +209,12 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
             Start a conversation! You can ask me to help with your TODOs.
           </div>
         ) : (
-          messages.map((message, index) => {
-            // Determine if this is a user message (odd indices are typically user messages)
-            // This is a simple heuristic - in a real app you'd have a proper way to identify user vs bot messages
-            const isUser = index % 2 === 0;
-            return (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                isUser={isUser}
-              />
-            );
-          })
+          messages.map((message) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+            />
+          ))
         )}
         <div ref={messagesEndRef} />
       </div>

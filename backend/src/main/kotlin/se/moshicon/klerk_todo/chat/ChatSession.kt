@@ -3,9 +3,41 @@ package se.moshicon.klerk_todo.chat
 import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.util.*
+import com.openai.models.chat.completions.ChatCompletionMessageParam
+import com.openai.models.chat.completions.ChatCompletionUserMessageParam
+import com.openai.models.chat.completions.ChatCompletionAssistantMessageParam
 
 /**
- * Represents a single message in a chat conversation
+ * Enum to represent who sent the message
+ */
+@Serializable
+enum class MessageSender {
+    USER,
+    ASSISTANT
+}
+
+/**
+ * Represents a single message in a chat conversation for the browser
+ */
+@Serializable
+data class BrowserChatMessage(
+    val id: String = UUID.randomUUID().toString(),
+    val content: String,
+    val sender: MessageSender,
+    val timestamp: Long = Instant.now().epochSecond
+)
+
+/**
+ * Represents an internal message for LLM communication
+ */
+data class InternalChatMessage(
+    val id: String = UUID.randomUUID().toString(),
+    val messageParam: ChatCompletionMessageParam,
+    val timestamp: Long = Instant.now().epochSecond
+)
+
+/**
+ * Legacy ChatMessage for backward compatibility during transition
  */
 @Serializable
 data class ChatMessage(
@@ -20,15 +52,15 @@ data class ChatMessage(
 data class ChatSession(
     val sessionId: String = UUID.randomUUID().toString(),
     val userId: String,
-    val messages: MutableList<ChatMessage> = mutableListOf(),
+    val internalMessages: MutableList<InternalChatMessage> = mutableListOf(),
     val createdAt: Instant = Instant.now(),
     var lastAccessedAt: Instant = Instant.now()
 ) {
     /**
-     * Adds a message to the session and updates the last accessed time
+     * Adds an internal message to the session and updates the last accessed time
      */
-    fun addMessage(message: ChatMessage) {
-        messages.add(message)
+    fun addInternalMessage(message: InternalChatMessage) {
+        internalMessages.add(message)
         lastAccessedAt = Instant.now()
     }
 
@@ -48,16 +80,65 @@ data class ChatSession(
     }
 
     /**
-     * Gets the conversation history as a list of messages
+     * Gets the conversation history as a list of browser messages by converting internal messages
      */
-    fun getHistory(): List<ChatMessage> = messages.toList()
+    fun getHistory(): List<BrowserChatMessage> {
+        return internalMessages.mapNotNull { internalMsg ->
+            val messageParam = internalMsg.messageParam
+            when {
+                messageParam.isUser() -> BrowserChatMessage(
+                    id = internalMsg.id,
+                    content = messageParam.asUser().content().toString(),
+                    sender = MessageSender.USER,
+                    timestamp = internalMsg.timestamp
+                )
+                messageParam.isAssistant() -> {
+                    // Only include assistant messages that have content (skip tool call messages)
+                    val content = messageParam.asAssistant().content()
+                    if (content.isPresent) {
+                        val contentStr = content.get().toString()
+                        if (contentStr.isNotBlank()) {
+                            BrowserChatMessage(
+                                id = internalMsg.id,
+                                content = contentStr,
+                                sender = MessageSender.ASSISTANT,
+                                timestamp = internalMsg.timestamp
+                            )
+                        } else null
+                    } else null
+                }
+                // Skip system messages and tool messages - they're not shown to the user
+                else -> null
+            }
+        }
+    }
+
+    /**
+     * Gets the internal conversation history for LLM communication
+     */
+    fun getInternalHistory(): List<ChatCompletionMessageParam> = internalMessages.map { it.messageParam }
 
     /**
      * Clears all messages from the session
      */
     fun clearHistory() {
-        messages.clear()
+        internalMessages.clear()
         lastAccessedAt = Instant.now()
+    }
+
+    // Legacy methods for backward compatibility during transition
+    @Deprecated("Use addInternalMessage instead")
+    fun addMessage(message: ChatMessage) {
+        val userInternalMessage = InternalChatMessage(
+            id = message.id,
+            messageParam = ChatCompletionMessageParam.ofUser(
+                ChatCompletionUserMessageParam.builder()
+                    .content(message.content)
+                    .build()
+            ),
+            timestamp = message.timestamp
+        )
+        addInternalMessage(userInternalMessage)
     }
 }
 
@@ -71,10 +152,10 @@ data class ChatMessageRequest(
 
 @Serializable
 data class ChatMessageResponse(
-    val message: ChatMessage
+    val message: BrowserChatMessage
 )
 
 @Serializable
 data class ChatHistoryResponse(
-    val messages: List<ChatMessage>
+    val messages: List<BrowserChatMessage>
 )

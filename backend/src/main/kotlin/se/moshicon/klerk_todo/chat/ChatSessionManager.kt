@@ -111,7 +111,7 @@ object ChatSessionManager {
     fun getSessionStats(): SessionStats {
         val now = Instant.now()
         val activeSessions = sessions.values.count { !it.isExpired(SESSION_TIMEOUT_MINUTES) }
-        val totalMessages = sessions.values.sumOf { it.messages.size }
+        val totalMessages = sessions.values.sumOf { it.getHistory().size }
 
         return SessionStats(
             totalSessions = sessions.size,

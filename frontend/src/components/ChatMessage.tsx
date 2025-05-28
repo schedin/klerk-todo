@@ -1,12 +1,12 @@
 import React from 'react';
-import { ChatMessage as ChatMessageType } from '../types/chat';
+import { ChatMessage as ChatMessageType, MessageSender } from '../types/chat';
 
 interface ChatMessageProps {
   message: ChatMessageType;
-  isUser: boolean;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isUser }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+  const isUser = message.sender === MessageSender.USER;
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
