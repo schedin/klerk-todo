@@ -126,7 +126,10 @@ class ChatEngine(
                 ChatCompletionMessageParam.ofSystem(ChatCompletionSystemMessageParam.builder()
                     .content("""You are a helpful assistant that can manage TODO items.
                         You have access to tools that allow you to create, list, and manage TODOs.
-                        Use these tools when the user asks about TODO management."""
+                        Use these tools when the user asks about TODO management.
+                        The user is logged in as the username "${chatSession.userName}" and userID "${chatSession.userId}".
+                        The TODO objects is associated with the userID.
+                    """
                     )
                     .build()
                 )

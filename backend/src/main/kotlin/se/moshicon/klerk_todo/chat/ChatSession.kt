@@ -51,6 +51,7 @@ data class ChatMessage(
  */
 data class ChatSession(
     val sessionId: String = UUID.randomUUID().toString(),
+    val userName: String,
     val userId: String,
     val internalMessages: MutableList<InternalChatMessage> = mutableListOf(),
     val createdAt: Instant = Instant.now(),

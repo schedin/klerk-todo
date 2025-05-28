@@ -1,7 +1,11 @@
 package se.moshicon.klerk_todo.chat
 
+import dev.klerkframework.klerk.Klerk
+import dev.klerkframework.klerk.SystemIdentity
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
+import se.moshicon.klerk_todo.Ctx
+import se.moshicon.klerk_todo.Data
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.minutes
@@ -10,11 +14,13 @@ import kotlin.time.Duration.Companion.minutes
  * Singleton manager for handling chat sessions in memory
  */
 object ChatSessionManager {
+
     private val logger = LoggerFactory.getLogger(ChatSessionManager::class.java)
     private val sessions = ConcurrentHashMap<String, ChatSession>()
-    private val userSessions = ConcurrentHashMap<String, String>() // userId -> sessionId
+    private val userSessions = ConcurrentHashMap<String, String>() // userName -> sessionId
     lateinit var chatEngine: ChatEngine
         private set
+    private lateinit var klerk: Klerk<Ctx, Data>
 
     // Configuration
     private const val SESSION_TIMEOUT_MINUTES = 30L
@@ -25,7 +31,8 @@ object ChatSessionManager {
     /**
      * Initializes the session manager and starts the cleanup coroutine
      */
-    fun initialize(scope: CoroutineScope, chatEngine: ChatEngine) {
+    fun initialize(klerk: Klerk<Ctx, Data>, scope: CoroutineScope, chatEngine: ChatEngine) {
+        this.klerk = klerk
         this.chatEngine = chatEngine
         cleanupJob?.cancel()
         cleanupJob = scope.launch {
@@ -49,9 +56,9 @@ object ChatSessionManager {
     /**
      * Gets or creates a session for the given user
      */
-    fun getOrCreateSession(userId: String): ChatSession {
+    suspend fun getOrCreateSession(userName: String): ChatSession {
         // Check if user already has an active session
-        val existingSessionId = userSessions[userId]
+        val existingSessionId = userSessions[userName]
         if (existingSessionId != null) {
             val existingSession = sessions[existingSessionId]
             if (existingSession != null && !existingSession.isExpired(SESSION_TIMEOUT_MINUTES)) {
@@ -60,14 +67,19 @@ object ChatSessionManager {
             } else {
                 // Session expired, remove it
                 sessions.remove(existingSessionId)
-                userSessions.remove(userId)
+                userSessions.remove(userName)
             }
         }
 
+        val userId = klerk.read(Ctx(SystemIdentity)) {
+            getFirstWhere(data.users.all) {
+                it.props.name.value == userName
+            }.id.toString()
+        }
         // Create new session
-        val newSession = ChatSession(userId = userId)
+        val newSession = ChatSession(userName = userName, userId = userId)
         sessions[newSession.sessionId] = newSession
-        userSessions[userId] = newSession.sessionId
+        userSessions[userName] = newSession.sessionId
 
         return newSession
     }
@@ -90,8 +102,8 @@ object ChatSessionManager {
     /**
      * Gets a session by user ID
      */
-    fun getSessionByUserId(userId: String): ChatSession? {
-        val sessionId = userSessions[userId] ?: return null
+    fun getSessionByUserName(userName: String): ChatSession? {
+        val sessionId = userSessions[userName] ?: return null
         return getSession(sessionId)
     }
 
@@ -101,7 +113,7 @@ object ChatSessionManager {
     private fun removeSession(sessionId: String) {
         val session = sessions.remove(sessionId)
         if (session != null) {
-            userSessions.remove(session.userId)
+            userSessions.remove(session.userName)
         }
     }
 
@@ -131,7 +143,7 @@ object ChatSessionManager {
 
         expiredSessions.forEach { session ->
             sessions.remove(session.sessionId)
-            userSessions.remove(session.userId)
+            userSessions.remove(session.userName)
         }
 
         if (expiredSessions.isNotEmpty()) {

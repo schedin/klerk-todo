@@ -53,7 +53,7 @@ fun main() {
         }
     }
 
-    ChatSessionManager.initialize(GlobalScope, chatEngine)
+    ChatSessionManager.initialize(klerk, GlobalScope, chatEngine)
     Runtime.getRuntime().addShutdownHook(Thread {
         logger.info("Shutting down chat session manager...")
         ChatSessionManager.shutdown()

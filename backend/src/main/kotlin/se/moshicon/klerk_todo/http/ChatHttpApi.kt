@@ -9,10 +9,13 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.*
+import org.slf4j.LoggerFactory
 import se.moshicon.klerk_todo.Ctx
 import se.moshicon.klerk_todo.Data
 import se.moshicon.klerk_todo.McpServerConfig
 import se.moshicon.klerk_todo.chat.*
+
+private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.http.ChatHttpApi")
 
 fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig): Route.() -> Unit = {
     get("/history") { getChatHistory(call) }
@@ -21,9 +24,9 @@ fun registerChatRoutes(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig
 }
 
 private suspend fun getChatHistory(call: ApplicationCall) {
-    val userId = getUserIdFromCall(call) ?: return
+    val userName = getSubjectFromCall(call) ?: return
     try {
-        val session = ChatSessionManager.getSessionByUserId(userId)
+        val session = ChatSessionManager.getSessionByUserName(userName)
         val messages = session?.getHistory() ?: emptyList()
         call.respond(HttpStatusCode.OK, ChatHistoryResponse(messages))
     } catch (e: Exception) {
@@ -32,7 +35,7 @@ private suspend fun getChatHistory(call: ApplicationCall) {
 }
 
 private suspend fun addNewChatMessage(call: ApplicationCall) {
-    val userId = getUserIdFromCall(call) ?: return
+    val userName = getSubjectFromCall(call) ?: return
     try {
         val request = call.receive<ChatMessageRequest>()
 
@@ -46,8 +49,9 @@ private suspend fun addNewChatMessage(call: ApplicationCall) {
             content = request.content.trim()
         )
 
-        val chatSession = ChatSessionManager.getOrCreateSession(userId)
+        val chatSession = ChatSessionManager.getOrCreateSession(userName)
         val responseMessage = ChatSessionManager.chatEngine.handleChatMessage(chatSession, chatMessage)
+        logger.info("Response message: $responseMessage")
         call.respond(HttpStatusCode.OK, ChatMessageResponse(responseMessage))
     } catch (e: Exception) {
         call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to send message: ${e.message}"))
@@ -55,10 +59,10 @@ private suspend fun addNewChatMessage(call: ApplicationCall) {
 }
 
 private suspend fun clearChatHistory(call: ApplicationCall) {
-    val userId = getUserIdFromCall(call) ?: return
+    val userName = getSubjectFromCall(call) ?: return
 
     try {
-        val chatSession = ChatSessionManager.getSessionByUserId(userId)
+        val chatSession = ChatSessionManager.getSessionByUserName(userName)
         chatSession?.clearHistory()
         call.respond(HttpStatusCode.OK, mapOf("message" to "Chat history cleared successfully"))
     } catch (e: Exception) {
@@ -66,18 +70,18 @@ private suspend fun clearChatHistory(call: ApplicationCall) {
     }
 }
 
-/** Helper function to extract user ID from JWT token */
-private suspend fun getUserIdFromCall(call: ApplicationCall): String? {
+/** Helper function to extract the subject from JWT token */
+private suspend fun getSubjectFromCall(call: ApplicationCall): String? {
     val principal = call.principal<JWTPrincipal>()
     if (principal == null) {
         call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Authentication required"))
         return null
     }
 
-    val userId = principal.payload.getClaim("sub").asString()
-    if (userId.isNullOrBlank()) {
+    val subject = principal.payload.getClaim("sub").asString()
+    if (subject.isNullOrBlank()) {
         call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid token: missing user ID"))
         return null
     }
-    return userId
+    return subject
 }
