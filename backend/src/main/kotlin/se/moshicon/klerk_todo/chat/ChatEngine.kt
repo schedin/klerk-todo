@@ -147,9 +147,6 @@ class ChatEngine(
         return messages
     }
 
-    /**
-     * Executes an MCP tool call
-     */
     private suspend fun executeMcpTool(toolName: String, arguments: Map<String, Any>): CallToolResult {
         if (!isConnected) {
             throw IllegalStateException("MCP server not connected")
