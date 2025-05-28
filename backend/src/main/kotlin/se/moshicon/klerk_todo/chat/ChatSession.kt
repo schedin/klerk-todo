@@ -88,7 +88,7 @@ data class ChatSession(
             when {
                 messageParam.isUser() -> BrowserChatMessage(
                     id = internalMsg.id,
-                    content = messageParam.asUser().content().toString(),
+                    content = messageParam.asUser().content().text().get(),
                     sender = MessageSender.USER,
                     timestamp = internalMsg.timestamp
                 )
@@ -96,7 +96,7 @@ data class ChatSession(
                     // Only include assistant messages that have content (skip tool call messages)
                     val content = messageParam.asAssistant().content()
                     if (content.isPresent) {
-                        val contentStr = content.get().toString()
+                        val contentStr = content.get().text().get()
                         if (contentStr.isNotBlank()) {
                             BrowserChatMessage(
                                 id = internalMsg.id,
