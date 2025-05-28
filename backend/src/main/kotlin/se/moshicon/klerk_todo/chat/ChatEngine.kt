@@ -133,29 +133,8 @@ class ChatEngine(
             )
         }
 
-        // Use internal messages if available, otherwise convert browser messages
-        val internalHistory = chatSession.getInternalHistory()
-        if (internalHistory.isNotEmpty()) {
-            messages.addAll(internalHistory)
-        } else {
-            throw Exception("Not implemented")
-            // Convert browser messages to internal format for first-time use
-//            chatSession.getHistory().forEach { browserMsg ->
-//                val messageParam = when (browserMsg.sender) {
-//                    MessageSender.USER -> ChatCompletionMessageParam.ofUser(
-//                        ChatCompletionUserMessageParam.builder()
-//                            .content(browserMsg.content)
-//                            .build()
-//                    )
-//                    MessageSender.ASSISTANT -> ChatCompletionMessageParam.ofAssistant(
-//                        ChatCompletionAssistantMessageParam.builder()
-//                            .content(browserMsg.content)
-//                            .build()
-//                    )
-//                }
-//                messages.add(messageParam)
-//            }
-        }
+        // Add previous chat messages
+        messages.addAll(chatSession.getInternalHistory())
 
         return messages
     }
@@ -190,7 +169,6 @@ class ChatEngine(
             ),
             timestamp = message.timestamp
         )
-        chatSession.addInternalMessage(userInternalMessage)
 
         try {
             // Ensure MCP connection is established
@@ -200,6 +178,7 @@ class ChatEngine(
 
             // Convert chat history to OpenAI format
             val openAiMessages = convertChatHistoryToOpenAiMessages(chatSession)
+            chatSession.addInternalMessage(userInternalMessage)
 
             // Get available functions from MCP tools
             val functions = convertMcpToolsToOpenAiFunctions()
