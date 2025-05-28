@@ -26,7 +26,7 @@ object McpServerConfig {
 
 /* Configuration object for MCP clients */
 object McpClientConfig {
-    private const val DEFAULT_LLM_URL = "http://localhost:11434"
+    private const val DEFAULT_LLM_URL = "http://localhost:11434/v1"
     private const val DEFAULT_LLM_MODEL = "gemma3:1b-it-qat"
 
     /**

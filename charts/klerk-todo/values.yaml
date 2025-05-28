@@ -14,7 +14,7 @@ frontend:
 backend:
   image:
     image: "klerk-todo/backend"
-  llmServerUrl: "http://llm:11434"
+  llmServerUrl: "http://llm:11434/v1"
 
 backendLlm:
   image:
