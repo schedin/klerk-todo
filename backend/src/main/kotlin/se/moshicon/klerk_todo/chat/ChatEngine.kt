@@ -21,6 +21,8 @@ import com.openai.models.ChatModel
 import com.openai.models.FunctionDefinition
 import com.openai.models.FunctionParameters
 import com.openai.core.JsonValue
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 
 import se.moshicon.klerk_todo.McpClientConfig
 import java.time.Duration
@@ -32,6 +34,7 @@ class ChatEngine(
     private val llmApiKey: String
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val llmDebugLogger = LoggerFactory.getLogger("se.moshicon.klerk_todo.chat.LLMDebugLogger")
     private val mcp: Client = Client(clientInfo = Implementation(name = "mcp-todo-chat-client", version = "1.0.0"))
     private val httpClient = HttpClient(CIO) {
         install(SSE)
@@ -40,6 +43,14 @@ class ChatEngine(
     private var isConnected = false
     private var tools: List<Tool> = emptyList()
 
+    // Check if LLM debug logging is enabled via environment variable
+    private val isLlmDebugEnabled = System.getenv("LLM_LOGFILE") != null
+
+    // JSON mapper for pretty printing debug logs
+    private val jsonMapper = ObjectMapper().apply {
+        enable(SerializationFeature.INDENT_OUTPUT)
+    }
+
     // OpenAI client for LLM communication
     private val openAIClient: OpenAIClient by lazy {
         OpenAIOkHttpClient.builder()
@@ -47,6 +58,139 @@ class ChatEngine(
             .baseUrl(llmServerUrl.toString())
             .timeout(Duration.ofSeconds(60))
             .build()
+    }
+
+    /**
+     * Logs LLM request details for debugging
+     */
+    private fun logLlmRequest(requestType: String, request: ChatCompletionCreateParams, sessionId: String) {
+        if (!isLlmDebugEnabled || !llmDebugLogger.isDebugEnabled) return
+
+        try {
+            llmDebugLogger.debug("=== LLM REQUEST ($requestType) ===")
+            llmDebugLogger.debug("Session ID: $sessionId")
+            llmDebugLogger.debug("Model: ${request.model()}")
+            llmDebugLogger.debug("Messages:")
+
+            request.messages().forEachIndexed { index, message ->
+                llmDebugLogger.debug("  Message $index:")
+                when {
+                    message.isSystem() -> {
+                        llmDebugLogger.debug("    Role: system")
+                        llmDebugLogger.debug("    Content: ${message.asSystem().content()}")
+                    }
+                    message.isUser() -> {
+                        llmDebugLogger.debug("    Role: user")
+                        llmDebugLogger.debug("    Content: ${message.asUser().content().text().orElse("")}")
+                    }
+                    message.isAssistant() -> {
+                        llmDebugLogger.debug("    Role: assistant")
+                        val assistantContent = message.asAssistant().content()
+                        if (assistantContent.isPresent) {
+                            llmDebugLogger.debug("    Content: ${assistantContent.get()}")
+                        } else {
+                            llmDebugLogger.debug("    Content: (empty)")
+                        }
+                        if (message.asAssistant().toolCalls().isPresent) {
+                            llmDebugLogger.debug("    Tool Calls:")
+                            message.asAssistant().toolCalls().get().forEachIndexed { toolIndex, toolCall ->
+                                llmDebugLogger.debug("      Tool Call $toolIndex:")
+                                llmDebugLogger.debug("        ID: ${toolCall.id()}")
+                                llmDebugLogger.debug("        Function: ${toolCall.function().name()}")
+                                llmDebugLogger.debug("        Arguments: ${toolCall.function().arguments()}")
+                            }
+                        }
+                    }
+                    message.isTool() -> {
+                        llmDebugLogger.debug("    Role: tool")
+                        llmDebugLogger.debug("    Tool Call ID: ${message.asTool().toolCallId()}")
+                        llmDebugLogger.debug("    Content: ${message.asTool().content()}")
+                    }
+                }
+            }
+
+            if (request.tools().isPresent && request.tools().get().isNotEmpty()) {
+                llmDebugLogger.debug("Available Tools:")
+                request.tools().get().forEachIndexed { index, tool ->
+                    llmDebugLogger.debug("  Tool $index:")
+                    llmDebugLogger.debug("    Name: ${tool.function().name()}")
+                    llmDebugLogger.debug("    Description: ${tool.function().description().orElse("")}")
+                    if (tool.function().parameters().isPresent) {
+                        llmDebugLogger.debug("    Parameters: (present)")
+                    } else {
+                        llmDebugLogger.debug("    Parameters: (none)")
+                    }
+                }
+            }
+
+            llmDebugLogger.debug("=== END LLM REQUEST ===")
+        } catch (e: Exception) {
+            llmDebugLogger.warn("Failed to log LLM request: ${e.message}")
+        }
+    }
+
+    /**
+     * Logs LLM response details for debugging
+     */
+    private fun logLlmResponse(requestType: String, response: ChatCompletion, sessionId: String) {
+        if (!isLlmDebugEnabled || !llmDebugLogger.isDebugEnabled) return
+
+        try {
+            llmDebugLogger.debug("=== LLM RESPONSE ($requestType) ===")
+            llmDebugLogger.debug("Session ID: $sessionId")
+            llmDebugLogger.debug("Model: ${response.model()}")
+            llmDebugLogger.debug("Usage:")
+            response.usage().ifPresent { usage ->
+                llmDebugLogger.debug("  Prompt tokens: ${usage.promptTokens()}")
+                llmDebugLogger.debug("  Completion tokens: ${usage.completionTokens()}")
+                llmDebugLogger.debug("  Total tokens: ${usage.totalTokens()}")
+            }
+
+            llmDebugLogger.debug("Choices:")
+            response.choices().forEachIndexed { index, choice ->
+                llmDebugLogger.debug("  Choice $index:")
+                llmDebugLogger.debug("    Finish reason: ${choice.finishReason()}")
+                llmDebugLogger.debug("    Message:")
+                val message = choice.message()
+                llmDebugLogger.debug("      Role: assistant")
+                llmDebugLogger.debug("      Content: ${message.content().orElse("")}")
+
+                if (message.toolCalls().isPresent && message.toolCalls().get().isNotEmpty()) {
+                    llmDebugLogger.debug("      Tool Calls:")
+                    message.toolCalls().get().forEachIndexed { toolIndex, toolCall ->
+                        llmDebugLogger.debug("        Tool Call $toolIndex:")
+                        llmDebugLogger.debug("          ID: ${toolCall.id()}")
+                        llmDebugLogger.debug("          Function: ${toolCall.function().name()}")
+                        llmDebugLogger.debug("          Arguments: ${toolCall.function().arguments()}")
+                    }
+                }
+            }
+
+            llmDebugLogger.debug("=== END LLM RESPONSE ===")
+        } catch (e: Exception) {
+            llmDebugLogger.warn("Failed to log LLM response: ${e.message}")
+        }
+    }
+
+    /**
+     * Logs tool execution details for debugging
+     */
+    private fun logToolExecution(toolName: String, arguments: Map<String, Any>, result: CallToolResult, sessionId: String) {
+        if (!isLlmDebugEnabled || !llmDebugLogger.isDebugEnabled) return
+
+        try {
+            llmDebugLogger.debug("=== TOOL EXECUTION ===")
+            llmDebugLogger.debug("Session ID: $sessionId")
+            llmDebugLogger.debug("Tool Name: $toolName")
+            llmDebugLogger.debug("Arguments: ${jsonMapper.writeValueAsString(arguments)}")
+            llmDebugLogger.debug("Result:")
+            result.content.forEachIndexed { index, content ->
+                llmDebugLogger.debug("  Content $index: $content")
+            }
+            llmDebugLogger.debug("=== END TOOL EXECUTION ===")
+        } catch (e: Exception) {
+            llmDebugLogger.warn("Failed to log tool execution: ${e.message}")
+        }
     }
 
     suspend fun initMcpServerConnection() {
@@ -184,7 +328,7 @@ class ChatEngine(
         return messages
     }
 
-    private suspend fun executeMcpTool(toolName: String, arguments: Map<String, Any>): CallToolResult {
+    private suspend fun executeMcpTool(toolName: String, arguments: Map<String, Any>, sessionId: String): CallToolResult {
         if (!isConnected) {
             throw IllegalStateException("MCP server not connected")
         }
@@ -201,7 +345,12 @@ class ChatEngine(
 
         val request = CallToolRequest(name = toolName, arguments = jsonArguments)
         val result = mcp.callTool(request)
-        return result as? CallToolResult ?: throw RuntimeException("Tool call failed: $result")
+        val toolResult = result as? CallToolResult ?: throw RuntimeException("Tool call failed: $result")
+
+        // Log the tool execution
+        logToolExecution(toolName, arguments, toolResult, sessionId)
+
+        return toolResult
     }
 
     suspend fun handleChatMessage(chatSession: ChatSession, message: ChatMessage): BrowserChatMessage {
@@ -240,8 +389,15 @@ class ChatEngine(
 
             val chatCompletionRequest = requestBuilder.build()
 
+            // Log the LLM request
+            logLlmRequest("INITIAL", chatCompletionRequest, chatSession.sessionId)
+
             // Call LLM
             val completion = openAIClient.chat().completions().create(chatCompletionRequest)
+
+            // Log the LLM response
+            logLlmResponse("INITIAL", completion, chatSession.sessionId)
+
             val choice = completion.choices().firstOrNull()
                 ?: throw RuntimeException("No response from LLM")
 
@@ -278,7 +434,7 @@ class ChatEngine(
                             .readValue(function.arguments(), Map::class.java) as Map<String, Any>
 
                         // Execute MCP tool
-                        val toolResult = executeMcpTool(function.name(), arguments)
+                        val toolResult = executeMcpTool(function.name(), arguments, chatSession.sessionId)
 
                         // Add tool result message
                         val toolResultParam = ChatCompletionMessageParam.ofTool(
@@ -299,7 +455,14 @@ class ChatEngine(
                         .messages(updatedMessages)
                         .build()
 
+                    // Log the final LLM request
+                    logLlmRequest("FINAL", finalRequest, chatSession.sessionId)
+
                     val finalCompletion = openAIClient.chat().completions().create(finalRequest)
+
+                    // Log the final LLM response
+                    logLlmResponse("FINAL", finalCompletion, chatSession.sessionId)
+
                     val finalChoice = finalCompletion.choices().firstOrNull()
                         ?: throw RuntimeException("No final response from LLM")
 

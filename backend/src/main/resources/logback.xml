@@ -4,9 +4,24 @@
             <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+
+    <!-- LLM debug file appender - only used when LLM_LOGFILE is set -->
+    <appender name="LLM_DEBUG_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${LLM_LOGFILE:-/dev/null}</file>
+        <encoder>
+            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
+
+    <!-- LLM debug logger - will be controlled programmatically -->
+    <logger name="se.moshicon.klerk_todo.chat.LLMDebugLogger" level="DEBUG" additivity="false">
+        <appender-ref ref="LLM_DEBUG_FILE"/>
+    </logger>
+
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
 </configuration>
