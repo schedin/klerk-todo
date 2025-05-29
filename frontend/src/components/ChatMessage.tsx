@@ -31,7 +31,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         }}
       >
         <div style={{ fontSize: '14px', lineHeight: '1.4' }}>
-          {message.content}
+          {message.content.split('\n').map((line, index, array) => (
+            <React.Fragment key={index}>
+              {line}
+              {index < array.length - 1 && <br />}
+            </React.Fragment>
+          ))}
         </div>
         <div
           style={{
