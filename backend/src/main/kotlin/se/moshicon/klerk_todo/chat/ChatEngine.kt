@@ -434,7 +434,7 @@ class ChatEngine(
                         logger.info("Executing tool: ${function.name()} with arguments: ${function.arguments()}")
 
                         // Parse function arguments
-                        val arguments = com.fasterxml.jackson.databind.ObjectMapper()
+                        val arguments = ObjectMapper()
                             .readValue(function.arguments(), Map::class.java) as Map<String, Any>
 
                         // Execute MCP tool
