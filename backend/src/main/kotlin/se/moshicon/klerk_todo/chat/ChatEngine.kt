@@ -372,6 +372,9 @@ class ChatEngine(
 
             // Convert chat history to OpenAI format
             val openAiMessages = convertChatHistoryToOpenAiMessages(chatSession)
+            // Add the current user message to the messages for the LLM request
+            openAiMessages.add(userInternalMessage.messageParam)
+            // Also add to internal history for future conversations
             chatSession.addInternalMessage(userInternalMessage)
 
             // Get available functions from MCP tools
