@@ -19,6 +19,9 @@ import com.openai.client.okhttp.OpenAIOkHttpClient
 import com.openai.models.chat.completions.*
 import com.openai.models.ChatModel
 import com.openai.models.FunctionDefinition
+import com.openai.models.FunctionParameters
+import com.openai.core.JsonValue
+
 import se.moshicon.klerk_todo.McpClientConfig
 import java.time.Duration
 
@@ -86,15 +89,53 @@ class ChatEngine(
      */
     private fun convertMcpToolsToOpenAiFunctions(): List<ChatCompletionTool> {
         return tools.map { tool ->
+            val functionBuilder = FunctionDefinition.builder()
+                .name(tool.name)
+                .description(tool.description ?: "")
+
+            // Add parameters schema if available
+            tool.inputSchema.let { inputSchema: Tool.Input ->
+                val parametersSchema = convertMcpInputSchemaToOpenAiParameters(inputSchema)
+                val functionParametersBuilder = FunctionParameters.builder()
+
+                // Add each property from the schema
+                parametersSchema.forEach { (key, value) ->
+                    functionParametersBuilder.putAdditionalProperty(key, JsonValue.from(value))
+                }
+
+                functionBuilder.parameters(functionParametersBuilder.build())
+            }
+
             ChatCompletionTool.builder()
-                .function(
-                    FunctionDefinition.builder()
-                        .name(tool.name)
-                        .description(tool.description ?: "")
-                        .build()
-                )
+                .function(functionBuilder.build())
                 .build()
         }
+    }
+
+    /**
+     * Converts MCP Tool.Input schema to OpenAI function parameters format
+     */
+    private fun convertMcpInputSchemaToOpenAiParameters(inputSchema: Tool.Input): Map<String, Any> {
+        val parametersMap = mutableMapOf<String, Any>()
+
+        // Set the type to "object" as OpenAI expects
+        parametersMap["type"] = "object"
+
+        // Convert properties from JsonObject to Map
+        val properties = mutableMapOf<String, Any>()
+        inputSchema.properties.forEach { (key, value) ->
+            properties[key] = convertJsonObjectToMap(value as JsonObject)
+        }
+        parametersMap["properties"] = properties
+
+        // Add required parameters if any
+        inputSchema.required?.let { requiredList ->
+            if (requiredList.isNotEmpty()) {
+                parametersMap["required"] = requiredList
+            }
+        }
+
+        return parametersMap
     }
 
     /**
@@ -125,9 +166,9 @@ class ChatEngine(
         if (chatSession.getInternalHistory().isEmpty()) {
             messages.add(
                 ChatCompletionMessageParam.ofSystem(ChatCompletionSystemMessageParam.builder()
-                    .content("""You are a helpful assistant that can manage TODO items.
-                        You have access to tools that allow you to create, list, and manage TODOs.
-                        Use these tools when the user asks about TODO management.
+                    .content("""You are a helpful assistant that can manage TODO items in a web based TODO application.
+                        You have access to tools (function invocations) to list and manipulate the TODOs. Use the tools are you see fit to help the user.
+                        A normal user will only see its own TODOs. But a user that is a member of the admin group can see all. Some users are guest and can only created a limited amount of TODO items.
                         The user is logged in as the username "${chatSession.userName}" and userID "${chatSession.userId}".
                         The TODO objects is associated with the userID.
                     """
@@ -163,7 +204,7 @@ class ChatEngine(
         return result as? CallToolResult ?: throw RuntimeException("Tool call failed: $result")
     }
 
-    suspend fun handleChatMessage(chatSession: ChatSession, message: se.moshicon.klerk_todo.chat.ChatMessage): BrowserChatMessage {
+    suspend fun handleChatMessage(chatSession: ChatSession, message: ChatMessage): BrowserChatMessage {
         // Add user message to internal message list
         val userInternalMessage = InternalChatMessage(
             messageParam = ChatCompletionMessageParam.ofUser(
