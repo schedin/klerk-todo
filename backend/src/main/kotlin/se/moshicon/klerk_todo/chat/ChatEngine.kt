@@ -325,6 +325,7 @@ class ChatEngine(
                 ChatCompletionMessageParam.ofSystem(ChatCompletionSystemMessageParam.builder()
                     .content("""You are a helpful assistant that can manage TODO items in a web based TODO application.
                         You have access to tools (function invocations) to list and manipulate the TODOs. Use the tools are you see fit to help the user.
+                        Most tool input parameters will take a username, but the output may show a userid. Make sure to send in the correct form when using a tool.
                         A normal user will only see its own TODOs. But a user that is a member of the admin group can see all. Some users are guest and can only created a limited amount of TODO items.
                         The user is logged in as the username "${chatSession.userName}" and userID "${chatSession.userId}".
                         The TODO objects is associated with the userID.
