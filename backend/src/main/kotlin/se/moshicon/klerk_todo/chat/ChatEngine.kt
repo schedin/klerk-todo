@@ -315,6 +315,7 @@ class ChatEngine(
                         A normal user will only see its own TODOs. But a user that is a member of the admin group can see all. Some users are guest and can only created a limited amount of TODO items.
                         The user is logged in as the username "${chatSession.userName}" and userID "${chatSession.userId}".
                         The TODO objects is associated with the userID.
+                        Because of a system policy only even priorities for TODO items are allowed.
                     """
                     )
                     .build()
