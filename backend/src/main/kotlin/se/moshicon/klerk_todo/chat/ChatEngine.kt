@@ -116,7 +116,20 @@ class ChatEngine(
                     llmDebugLogger.debug("    Name: ${tool.function().name()}")
                     llmDebugLogger.debug("    Description: ${tool.function().description().orElse("")}")
                     if (tool.function().parameters().isPresent) {
-                        llmDebugLogger.debug("    Parameters: (present)")
+                        llmDebugLogger.debug("    Parameters:")
+                        try {
+                            val parameters = tool.function().parameters().get()
+                            // Convert the FunctionParameters to a readable format
+                            val parametersMap = mutableMapOf<String, Any>()
+
+                            // Extract all additional properties from the FunctionParameters
+                            val parametersJson = jsonMapper.writeValueAsString(parameters)
+                            val parametersData = jsonMapper.readValue(parametersJson, Map::class.java) as Map<String, Any>
+
+                            llmDebugLogger.debug("      ${jsonMapper.writeValueAsString(parametersData)}")
+                        } catch (e: Exception) {
+                            llmDebugLogger.debug("      (failed to parse parameters: ${e.message})")
+                        }
                     } else {
                         llmDebugLogger.debug("    Parameters: (none)")
                     }
