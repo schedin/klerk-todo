@@ -10,6 +10,7 @@ import org.apache.commons.dbcp2.BasicDataSource
 import org.mariadb.jdbc.MariaDbDataSource
 import org.slf4j.LoggerFactory
 import org.sqlite.SQLiteDataSource
+import java.io.File
 import se.moshicon.klerk_todo.authorizationRules
 import se.moshicon.klerk_todo.notes.Todo
 import se.moshicon.klerk_todo.notes.todoStateMachine
@@ -48,8 +49,9 @@ object Data {
 }
 
 private fun createPersistence(): Persistence {
-    val dbFilePath =
-        requireNotNull(System.getenv("DATABASE_PATH")) { "The environment variable 'DATABASE_PATH' must be set" }
+    val dbFilePath = System.getenv("DATABASE_PATH")
+        ?: File(System.getProperty("java.io.tmpdir"), "klerk-todo.sqlite").absolutePath
+    logger.info("Using SQLite database file: {}", dbFilePath)
     val ds =  SQLiteDataSource()
     ds.url = "jdbc:sqlite:$dbFilePath"
     return SqlPersistence(ds)
