@@ -115,7 +115,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
         position: 'fixed',
         bottom: '80px',
         right: '20px',
-        width: '400px',
+        width: '500px',
         height: '650px',
         backgroundColor: 'white',
         borderRadius: '12px',
