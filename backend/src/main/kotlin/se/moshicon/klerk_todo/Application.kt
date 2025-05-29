@@ -11,7 +11,10 @@ import io.ktor.server.application.*
 import io.ktor.http.*
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import org.slf4j.LoggerFactory
 import se.moshicon.klerk_todo.http.configureHttpRouting
 import se.moshicon.klerk_todo.http.findOrCreateUser
@@ -22,6 +25,9 @@ import se.moshicon.klerk_todo.chat.ChatSessionManager
 import se.moshicon.klerk_todo.chat.ChatEngine
 
 private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.Application")
+
+// Create an application scope that can be cancelled on shutdown
+private val applicationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
 fun main() {
     val klerk = Klerk.create(createConfig())
@@ -54,10 +60,12 @@ fun main() {
         }
     }
 
-    ChatSessionManager.initialize(klerk, GlobalScope, chatEngine)
+    ChatSessionManager.initialize(klerk, applicationScope, chatEngine)
     Runtime.getRuntime().addShutdownHook(Thread {
         logger.info("Shutting down chat session manager...")
         ChatSessionManager.shutdown()
+        logger.info("Cancelling application scope...")
+        applicationScope.cancel()
     })
 
     embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
