@@ -25,7 +25,8 @@ import java.time.Duration
 
 class ChatEngine(
     private val mcpServerUrl: Url,
-    private val llmServerUrl: Url
+    private val llmServerUrl: Url,
+    private val llmApiKey: String
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val mcp: Client = Client(clientInfo = Implementation(name = "mcp-todo-chat-client", version = "1.0.0"))
@@ -39,7 +40,7 @@ class ChatEngine(
     // OpenAI client for LLM communication
     private val openAIClient: OpenAIClient by lazy {
         OpenAIOkHttpClient.builder()
-            .apiKey("dummy-api-key") // Ollama doesn't require a real API key
+            .apiKey(llmApiKey)
             .baseUrl(llmServerUrl.toString())
             .timeout(Duration.ofSeconds(60))
             .build()

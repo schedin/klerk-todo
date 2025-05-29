@@ -38,7 +38,8 @@ fun main() {
     // Create and initialize ChatEngine with MCP connection
     val chatEngine = ChatEngine(
         Url(McpClientConfig.mcpServerUrl),
-        Url(McpClientConfig.llmServerUrl)
+        Url(McpClientConfig.llmServerUrl),
+        McpClientConfig.llmApiKey
     )
 
     // Initialize MCP server connection
