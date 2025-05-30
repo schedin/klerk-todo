@@ -102,19 +102,16 @@ fun startMcpServer(klerk: Klerk<Ctx, Data>) {
     logger.info("Starting MCP server on port ${McpServerConfig.PORT}...")
 
     suspend fun contextProvider(requestContext: McpRequestContext): Ctx {
-        requestContext.authorizationHeader?.let { authHeader ->
-            if (authHeader.startsWith("Bearer ")) {
-                try {
-                    val token = authHeader.substring(7)
-                    val decodedJWT = JWT.decode(token)
-                    JWT.require(Algorithm.HMAC256(JWT_SECRET)).build().verify(decodedJWT)
-                    getKlerkContextFromJWT(klerk, decodedJWT)
-                } catch (e: Exception) {
-                    logger.warn("Failed to parse JWT token from MCP request: ${e.message}")
-                    Ctx(Unauthenticated)
-                }
+        requestContext.authToken?.let { authHeader ->
+            try {
+                val token = authHeader.substring(7)
+                val decodedJWT = JWT.decode(token)
+                JWT.require(Algorithm.HMAC256(JWT_SECRET)).build().verify(decodedJWT)
+                getKlerkContextFromJWT(klerk, decodedJWT)
+            } catch (e: Exception) {
+                logger.warn("Failed to parse JWT token from MCP request: ${e.message}")
+                Ctx(Unauthenticated)
             }
-            Ctx(Unauthenticated)
         }
         return Ctx(Unauthenticated)
     }

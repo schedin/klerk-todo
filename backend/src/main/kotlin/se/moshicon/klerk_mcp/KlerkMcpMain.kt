@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
  * Represents MCP related context that can be used by the ContextProvider to create a context.
  */
 data class McpRequestContext(
-    val authorizationHeader: String? = null,
+    val authToken: String? = null,
     val allHeaders: Map<String, String> = emptyMap(),
     val remoteAddress: String? = null,
     val command: Command<*, *>? = null,
@@ -141,21 +141,9 @@ fun <C : KlerkContext, V> createMcpServer(
             description = "Lists all ${model.kClass.simpleName!!} models",
         ) { request ->
             // Extract authentication information from _meta parameter
-            val authToken = request._meta?.let { meta ->
-                if (meta is JsonObject) {
-                    meta["authToken"]?.let { tokenElement ->
-                        if (tokenElement is JsonPrimitive && tokenElement.isString) {
-                            tokenElement.content
-                        } else null
-                    }
-                } else null
-            }
 
-            val requestContext = McpRequestContext(
-                authorizationHeader = authToken?.let { "Bearer $it" }
-            )
-
-            val models = klerk.read(contextProvider(requestContext)) {
+            val authToken = extractAuthToken(request)
+            val models = klerk.read(contextProvider(McpRequestContext(authToken=authToken))) {
                 listIfAuthorized(model.collections.all)
             }
 
@@ -267,6 +255,18 @@ private fun createCommandParams(event: Event<Any, Any?>, request: CallToolReques
     }
 }
 
+/** Extracts authentication information from the _meta parameter of an MCP request. */
+private fun extractAuthToken(request: CallToolRequest): String? {
+    val authToken = request._meta.let { meta ->
+        meta["authToken"]?.let { tokenElement ->
+            if (tokenElement is JsonPrimitive && tokenElement.isString) {
+                tokenElement.content
+            } else null
+        }
+    }
+    return authToken
+}
+
 private suspend fun <T : Any, ModelStates : Enum<*>, C : KlerkContext, V> handleToolRequest(
     stateMachine: StateMachine<T, ModelStates, C, V>,
     klerk: Klerk<C, V>,
@@ -293,24 +293,8 @@ private suspend fun <T : Any, ModelStates : Enum<*>, C : KlerkContext, V> handle
         model = modelIdForCommand,
         params = paramsInstance
     )
-
-    // Extract authentication information from _meta parameter
-    val authToken = request._meta?.let { meta ->
-        if (meta is JsonObject) {
-            meta["authToken"]?.let { tokenElement ->
-                if (tokenElement is JsonPrimitive && tokenElement.isString) {
-                    tokenElement.content
-                } else null
-            }
-        } else null
-    }
-
-    val requestContext = McpRequestContext(
-        authorizationHeader = authToken?.let { "Bearer $it" }
-    )
-
-    // Create a context for the command
-    val context = contextProvider(requestContext)
+    val authToken = extractAuthToken(request)
+    val context = contextProvider(McpRequestContext(authToken=authToken, command=command))
 
     // Handle the command
     when(val result = klerk.handle(command, context, ProcessingOptions(CommandToken.simple()))) {
