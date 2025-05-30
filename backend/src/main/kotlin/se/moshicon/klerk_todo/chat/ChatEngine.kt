@@ -341,7 +341,7 @@ class ChatEngine(
         return messages
     }
 
-    private suspend fun executeMcpTool(toolName: String, arguments: Map<String, Any>, sessionId: String): CallToolResult {
+    private suspend fun executeMcpTool(toolName: String, arguments: Map<String, Any>, chatSession: ChatSession): CallToolResult {
         if (!isConnected) {
             throw IllegalStateException("MCP server not connected")
         }
@@ -356,12 +356,18 @@ class ChatEngine(
             }
         })
 
-        val request = CallToolRequest(name = toolName, arguments = jsonArguments)
+        // Create the request with or without metadata based on auth token availability
+        val request = if (chatSession.authToken != null) {
+            val meta = JsonObject(mapOf("authToken" to JsonPrimitive(chatSession.authToken)))
+            CallToolRequest(name = toolName, arguments = jsonArguments, _meta = meta)
+        } else {
+            CallToolRequest(name = toolName, arguments = jsonArguments)
+        }
         val result = mcp.callTool(request)
         val toolResult = result as? CallToolResult ?: throw RuntimeException("Tool call failed: $result")
 
         // Log the tool execution
-        logToolExecution(toolName, arguments, toolResult, sessionId)
+        logToolExecution(toolName, arguments, toolResult, chatSession.sessionId)
 
         return toolResult
     }
@@ -450,7 +456,7 @@ class ChatEngine(
                             .readValue(function.arguments(), Map::class.java) as Map<String, Any>
 
                         // Execute MCP tool
-                        val toolResult = executeMcpTool(function.name(), arguments, chatSession.sessionId)
+                        val toolResult = executeMcpTool(function.name(), arguments, chatSession)
 
                         // Add tool result message
                         val toolResultParam = ChatCompletionMessageParam.ofTool(

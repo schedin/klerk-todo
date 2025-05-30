@@ -55,7 +55,8 @@ data class ChatSession(
     val userId: String,
     val internalMessages: MutableList<InternalChatMessage> = mutableListOf(),
     val createdAt: Instant = Instant.now(),
-    var lastAccessedAt: Instant = Instant.now()
+    var lastAccessedAt: Instant = Instant.now(),
+    var authToken: String? = null
 ) {
     /**
      * Adds an internal message to the session and updates the last accessed time
@@ -69,6 +70,14 @@ data class ChatSession(
      * Updates the last accessed time
      */
     fun touch() {
+        lastAccessedAt = Instant.now()
+    }
+
+    /**
+     * Updates the authentication token for this session
+     */
+    fun updateAuthToken(token: String?) {
+        authToken = token
         lastAccessedAt = Instant.now()
     }
 

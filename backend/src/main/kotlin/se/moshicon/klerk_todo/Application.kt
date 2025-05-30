@@ -23,6 +23,7 @@ import se.moshicon.klerk_mcp.createMcpServer
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
 import se.moshicon.klerk_todo.chat.ChatSessionManager
 import se.moshicon.klerk_todo.chat.ChatEngine
+import com.auth0.jwt.JWT
 
 private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.Application")
 
@@ -97,8 +98,25 @@ fun main() {
 fun startMcpServer(klerk: Klerk<Ctx, Data>) {
     logger.info("Starting MCP server on port ${McpServerConfig.PORT}...")
 
-    suspend fun contextProvider(command: dev.klerkframework.klerk.command.Command<*, *>?): Ctx {
-        val user = findOrCreateUser(klerk, "Alice")
+    suspend fun contextProvider(command: dev.klerkframework.klerk.command.Command<*, *>?, requestContext: se.moshicon.klerk_mcp.McpRequestContext?): Ctx {
+        // Extract user information from authorization header if present
+        val username = requestContext?.authorizationHeader?.let { authHeader ->
+            if (authHeader.startsWith("Bearer ")) {
+                try {
+                    // Parse JWT token to extract username
+                    val token = authHeader.substring(7)
+                    val jwt = com.auth0.jwt.JWT.decode(token)
+                    jwt.getClaim("sub").asString()
+                } catch (e: Exception) {
+                    logger.warn("Failed to parse JWT token from MCP request: ${e.message}")
+                    null
+                }
+            } else {
+                null
+            }
+        } ?: "Alice" // Default fallback user
+
+        val user = findOrCreateUser(klerk, username)
         return Ctx(GroupModelIdentity(model = user, groups = listOf("admins", "users")))
     }
 

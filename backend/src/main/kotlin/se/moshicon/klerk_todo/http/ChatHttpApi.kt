@@ -50,6 +50,13 @@ private suspend fun addNewChatMessage(call: ApplicationCall) {
         )
 
         val chatSession = ChatSessionManager.getOrCreateSession(userName)
+
+        // Extract JWT token from Authorization header and store it in the session
+        val authHeader = call.request.headers["Authorization"]
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            val token = authHeader.substring(7).trim()
+            chatSession.updateAuthToken(token)
+        }
         val responseMessage = ChatSessionManager.chatEngine.handleChatMessage(chatSession, chatMessage)
         logger.info("Response message: $responseMessage")
         call.respond(HttpStatusCode.OK, ChatMessageResponse(responseMessage))

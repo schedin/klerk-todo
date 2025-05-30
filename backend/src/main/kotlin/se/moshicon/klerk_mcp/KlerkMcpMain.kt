@@ -18,13 +18,24 @@ import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
 
 /**
+ * Represents HTTP request context information that can be passed to the ContextProvider.
+ * This includes authentication headers and other request metadata.
+ */
+data class McpRequestContext(
+    val authorizationHeader: String? = null,
+    val allHeaders: Map<String, String> = emptyMap(),
+    val remoteAddress: String? = null
+)
+
+/**
  * A function that provides a context for executing commands.
  * This is typically used to create a context based on the current request or user session.
  *
  * @param C The type of KlerkContext that will be provided, typically a class named Ctx
  * @param command The command being executed, or null if no specific command is associated with this context request
+ * @param requestContext HTTP request context information including headers and authentication
  */
-typealias ContextProvider<C> = suspend (command: Command<*, *>?) -> C
+typealias ContextProvider<C> = suspend (command: Command<*, *>?, requestContext: McpRequestContext?) -> C
 
 //fun configureMcpServer(): Routing.() -> Unit = {
 //    mcp {
@@ -110,7 +121,7 @@ fun <C : KlerkContext, V> createMcpServer(
             description = "A list of ${model.kClass.simpleName}s in JSON format",
             mimeType = "application/json",
         ) { request ->
-            val models = klerk.read(contextProvider(null)) {
+            val models = klerk.read(contextProvider(null, null)) {
                 listIfAuthorized(model.collections.all)
             }
 
@@ -130,7 +141,7 @@ fun <C : KlerkContext, V> createMcpServer(
             name = "${toSnakeCase(model.kClass.simpleName!!)}_list",
             description = "Lists all ${model.kClass.simpleName!!} models",
         ) { request ->
-            val models = klerk.read(contextProvider(null)) {
+            val models = klerk.read(contextProvider(null, null)) {
                 listIfAuthorized(model.collections.all)
             }
 
@@ -269,8 +280,23 @@ private suspend fun <T : Any, ModelStates : Enum<*>, C : KlerkContext, V> handle
         params = paramsInstance
     )
 
+    // Extract authentication information from _meta parameter
+    val authToken = request._meta?.let { meta ->
+        if (meta is JsonObject) {
+            meta["authToken"]?.let { tokenElement ->
+                if (tokenElement is JsonPrimitive && tokenElement.isString) {
+                    tokenElement.content
+                } else null
+            }
+        } else null
+    }
+
+    val requestContext = McpRequestContext(
+        authorizationHeader = authToken?.let { "Bearer $it" }
+    )
+
     // Create a context for the command
-    val context = contextProvider(command) // todo: fix model
+    val context = contextProvider(command, requestContext)
 
     // Handle the command
     when(val result = klerk.handle(command, context, ProcessingOptions(CommandToken.simple()))) {
