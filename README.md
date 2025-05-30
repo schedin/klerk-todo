@@ -1,6 +1,6 @@
 # klerk-todo
 
-A TODO management system demonstrating [Klerk Framework](https://github.com/klerk-framework/klerk). It also features an auto-generated MCP (Model Context Protocol) server, and chat interface with an MCP client and LLM integration.
+A TODO management system demonstrating [Klerk Framework](https://github.com/klerk-framework/klerk). It also features an auto-generated MCP (Model Context Protocol) server and chat interface with an MCP client and LLM integration.
 
 ## 🏗️ Architecture Overview
 
@@ -22,7 +22,7 @@ This application showcases an event-driven architecture built on the Klerk Frame
 
 ### Frontend
 - **React 19** with **TypeScript**
-- **JWT-based Authentication**, simulating an identiy server, but in the web browswer.
+- **JWT-based Authentication**, simulating an identity server, but in the web browser.
 
 ### AI Integration
 - **Kotlin MCP SDK** for protocol implementation
