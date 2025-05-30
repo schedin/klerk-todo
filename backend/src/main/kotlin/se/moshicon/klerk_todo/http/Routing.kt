@@ -117,23 +117,7 @@ suspend fun ApplicationCall.context(klerk: Klerk<Ctx, Data>): Ctx {
     val principal = this.principal<JWTPrincipal>()
 
     return if (principal != null) {
-        try {
-            // Extract user information from JWT claims
-            val username = principal.payload.getClaim("sub").asString()
-
-            // Extract groups from JWT claims (if present)
-            val groups = try {
-                principal.payload.getClaim("groups").asList(String::class.java) ?: listOf()
-            } catch (e: Exception) {
-                listOf<String>()
-            }
-            val user = findOrCreateUser(klerk, username)
-            Ctx(GroupModelIdentity(model = user, groups = groups))
-        } catch (e: Exception) {
-            // Fallback to system identity if JWT parsing fails
-            println("Error parsing JWT: ${e.message}")
-            Ctx(Unauthenticated)
-        }
+        getKlerkContextFromJWT(klerk, principal.payload)
     } else if (request.cookies["user_info"] != null) {
         // Extract username and groups from cookie (not sure, don't use in production)
         val cookieValue = request.cookies["user_info"]!!
@@ -160,24 +144,3 @@ suspend fun ApplicationCall.context(klerk: Klerk<Ctx, Data>): Ctx {
     }
 }
 
-suspend fun findOrCreateUser(klerk: Klerk<Ctx, Data>, username: String): Model<User> {
-    val authContext = Ctx(AuthenticationIdentity)
-
-    // Try to find an existing user and return it if found
-    return klerk.read(authContext) {
-        firstOrNull(data.users.all) { it.props.name.value == username }
-    } ?: run {
-        // User not found, create a new one, trusting the JWT issuer for what users should exist
-        val command = Command(
-            event = CreateUser,
-            model = null,
-            params = CreateUserParams(UserName(username)),
-        )
-        klerk.handle(command, authContext, ProcessingOptions(CommandToken.simple()))
-
-        // Return the newly created user
-        klerk.read(authContext) {
-            getFirstWhere(data.users.all) { it.props.name.value == username }
-        }
-    }
-}
