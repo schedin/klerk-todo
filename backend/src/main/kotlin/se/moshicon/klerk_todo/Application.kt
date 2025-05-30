@@ -102,10 +102,14 @@ fun startMcpServer(klerk: Klerk<Ctx, Data>) {
     logger.info("Starting MCP server on port ${McpServerConfig.PORT}...")
 
     suspend fun contextProvider(requestContext: McpRequestContext): Ctx {
-        requestContext.authToken?.let { authHeader ->
+        if (requestContext.authToken == null) {
+            logger.warn("No auth token in MCP request")
+            return Ctx(Unauthenticated)
+        }
+
+        return requestContext.authToken.let { authToken ->
             try {
-                val token = authHeader.substring(7)
-                val decodedJWT = JWT.decode(token)
+                val decodedJWT = JWT.decode(authToken)
                 JWT.require(Algorithm.HMAC256(JWT_SECRET)).build().verify(decodedJWT)
                 getKlerkContextFromJWT(klerk, decodedJWT)
             } catch (e: Exception) {
@@ -113,7 +117,6 @@ fun startMcpServer(klerk: Klerk<Ctx, Data>) {
                 Ctx(Unauthenticated)
             }
         }
-        return Ctx(Unauthenticated)
     }
 
     val mcpServer = createMcpServer(klerk, ::contextProvider, McpServerConfig.SERVER_NAME, McpServerConfig.SERVER_VERSION)
