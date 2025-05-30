@@ -2,6 +2,10 @@
 
 A TODO management system demonstrating [Klerk Framework](https://github.com/klerk-framework/klerk). It also features an auto-generated MCP (Model Context Protocol) server and chat interface with an MCP client and LLM integration.
 
+
+https://github.com/user-attachments/assets/eec4fe4f-0c91-423d-8b38-ecddb8b370c7
+
+
 ## 🏗️ Architecture Overview
 
 This application showcases an event-driven architecture built on the Klerk Framework.
