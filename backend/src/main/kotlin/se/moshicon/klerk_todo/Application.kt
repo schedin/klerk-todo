@@ -24,7 +24,6 @@ import se.moshicon.klerk_todo.chat.ChatEngine
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import dev.klerkframework.klerk.Unauthenticated
-import dev.klerkframework.klerk.command.Command
 import se.moshicon.klerk_mcp.McpRequestContext
 import se.moshicon.klerk_todo.http.JWT_SECRET
 import se.moshicon.klerk_todo.http.getKlerkContextFromJWT
