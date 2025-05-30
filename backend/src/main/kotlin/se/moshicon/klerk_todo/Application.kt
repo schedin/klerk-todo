@@ -17,16 +17,16 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import org.slf4j.LoggerFactory
 import se.moshicon.klerk_todo.http.configureHttpRouting
-import se.moshicon.klerk_todo.http.findOrCreateUser
-import se.moshicon.klerk_todo.users.*
 import se.moshicon.klerk_mcp.createMcpServer
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
 import se.moshicon.klerk_todo.chat.ChatSessionManager
 import se.moshicon.klerk_todo.chat.ChatEngine
 import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import dev.klerkframework.klerk.Unauthenticated
 import dev.klerkframework.klerk.command.Command
 import se.moshicon.klerk_mcp.McpRequestContext
+import se.moshicon.klerk_todo.http.JWT_SECRET
 import se.moshicon.klerk_todo.http.getKlerkContextFromJWT
 
 private val logger = LoggerFactory.getLogger("se.moshicon.klerk_todo.Application")
@@ -102,13 +102,13 @@ fun main() {
 fun startMcpServer(klerk: Klerk<Ctx, Data>) {
     logger.info("Starting MCP server on port ${McpServerConfig.PORT}...")
 
-    suspend fun contextProvider(command: Command<*, *>?, requestContext: McpRequestContext?): Ctx {
+    suspend fun contextProvider(requestContext: McpRequestContext?): Ctx {
         requestContext?.authorizationHeader?.let { authHeader ->
             if (authHeader.startsWith("Bearer ")) {
                 try {
                     val token = authHeader.substring(7)
-                    // TODO: Verify token signature (JWT.decode() does not verify signature)
                     val decodedJWT = JWT.decode(token)
+                    JWT.require(Algorithm.HMAC256(JWT_SECRET)).build().verify(decodedJWT)
                     getKlerkContextFromJWT(klerk, decodedJWT)
                 } catch (e: Exception) {
                     logger.warn("Failed to parse JWT token from MCP request: ${e.message}")

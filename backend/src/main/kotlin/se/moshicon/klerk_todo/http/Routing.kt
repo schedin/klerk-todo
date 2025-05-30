@@ -3,9 +3,6 @@ package se.moshicon.klerk_todo.http
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import dev.klerkframework.klerk.*
-import dev.klerkframework.klerk.command.Command
-import dev.klerkframework.klerk.command.CommandToken
-import dev.klerkframework.klerk.command.ProcessingOptions
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -17,13 +14,6 @@ import se.moshicon.klerk_todo.Ctx
 import se.moshicon.klerk_todo.Data
 import se.moshicon.klerk_todo.McpServerConfig
 import se.moshicon.klerk_todo.users.*
-
-// JWT configuration constants
-// Note: In this demo, we're using a simplified JWT implementation without real verification
-// In a real app, you would use proper JWT verification with a secure secret key
-private const val JWT_SECRET = "your-secret-key"
-private const val JWT_ISSUER = "todo-app"
-private const val JWT_AUDIENCE = "todo-app-users"
 
 fun Application.configureHttpRouting(klerk: Klerk<Ctx, Data>, mcpServerConfig: McpServerConfig) {
     // Configure JWT authentication

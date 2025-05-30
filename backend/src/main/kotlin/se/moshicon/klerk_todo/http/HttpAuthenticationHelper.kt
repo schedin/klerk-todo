@@ -12,6 +12,11 @@ import se.moshicon.klerk_todo.Ctx
 import se.moshicon.klerk_todo.Data
 import se.moshicon.klerk_todo.users.*
 
+// JWT configuration constants
+// Note: In this demo, we're using a simplified JWT implementation signature verification process that probably
+// shouldn't be used in production. In a real app you should use a public/private key way of verifying the token.
+const val JWT_SECRET = "your-secret-key"
+
 suspend fun getKlerkContextFromJWT(klerk: Klerk<Ctx, Data>, decodedJWT: Payload): Ctx {
     val username = decodedJWT.getClaim("sub").asString() ?: return Ctx(Unauthenticated)
 

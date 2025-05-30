@@ -18,13 +18,13 @@ import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
 
 /**
- * Represents HTTP request context information that can be passed to the ContextProvider.
- * This includes authentication headers and other request metadata.
+ * Represents MCP related context that can be used by the ContextProvider to create a context.
  */
 data class McpRequestContext(
     val authorizationHeader: String? = null,
     val allHeaders: Map<String, String> = emptyMap(),
-    val remoteAddress: String? = null
+    val remoteAddress: String? = null,
+    val command: Command<*, *>? = null,
 )
 
 /**
@@ -32,10 +32,9 @@ data class McpRequestContext(
  * This is typically used to create a context based on the current request or user session.
  *
  * @param C The type of KlerkContext that will be provided, typically a class named Ctx
- * @param command The command being executed, or null if no specific command is associated with this context request
- * @param requestContext HTTP request context information including headers and authentication
+ * @param requestContext  MCP related context that can be used to create a context.
  */
-typealias ContextProvider<C> = suspend (command: Command<*, *>?, requestContext: McpRequestContext?) -> C
+typealias ContextProvider<C> = suspend (requestContext: McpRequestContext) -> C
 
 //fun configureMcpServer(): Routing.() -> Unit = {
 //    mcp {
@@ -121,7 +120,7 @@ fun <C : KlerkContext, V> createMcpServer(
             description = "A list of ${model.kClass.simpleName}s in JSON format",
             mimeType = "application/json",
         ) { request ->
-            val models = klerk.read(contextProvider(null, null)) {
+            val models = klerk.read(contextProvider(McpRequestContext())) {
                 listIfAuthorized(model.collections.all)
             }
 
@@ -141,7 +140,7 @@ fun <C : KlerkContext, V> createMcpServer(
             name = "${toSnakeCase(model.kClass.simpleName!!)}_list",
             description = "Lists all ${model.kClass.simpleName!!} models",
         ) { request ->
-            val models = klerk.read(contextProvider(null, null)) {
+            val models = klerk.read(contextProvider(McpRequestContext(authorizationHeader="TODO!"))) {
                 listIfAuthorized(model.collections.all)
             }
 
@@ -296,7 +295,7 @@ private suspend fun <T : Any, ModelStates : Enum<*>, C : KlerkContext, V> handle
     )
 
     // Create a context for the command
-    val context = contextProvider(command, requestContext)
+    val context = contextProvider(McpRequestContext(command=command, authorizationHeader = "TODO!"))
 
     // Handle the command
     when(val result = klerk.handle(command, context, ProcessingOptions(CommandToken.simple()))) {
