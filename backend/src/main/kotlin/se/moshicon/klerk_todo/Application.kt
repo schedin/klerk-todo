@@ -101,8 +101,8 @@ fun main() {
 fun startMcpServer(klerk: Klerk<Ctx, Data>) {
     logger.info("Starting MCP server on port ${McpServerConfig.PORT}...")
 
-    suspend fun contextProvider(requestContext: McpRequestContext?): Ctx {
-        requestContext?.authorizationHeader?.let { authHeader ->
+    suspend fun contextProvider(requestContext: McpRequestContext): Ctx {
+        requestContext.authorizationHeader?.let { authHeader ->
             if (authHeader.startsWith("Bearer ")) {
                 try {
                     val token = authHeader.substring(7)

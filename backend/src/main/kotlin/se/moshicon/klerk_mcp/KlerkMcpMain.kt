@@ -140,7 +140,22 @@ fun <C : KlerkContext, V> createMcpServer(
             name = "${toSnakeCase(model.kClass.simpleName!!)}_list",
             description = "Lists all ${model.kClass.simpleName!!} models",
         ) { request ->
-            val models = klerk.read(contextProvider(McpRequestContext(authorizationHeader="TODO!"))) {
+            // Extract authentication information from _meta parameter
+            val authToken = request._meta?.let { meta ->
+                if (meta is JsonObject) {
+                    meta["authToken"]?.let { tokenElement ->
+                        if (tokenElement is JsonPrimitive && tokenElement.isString) {
+                            tokenElement.content
+                        } else null
+                    }
+                } else null
+            }
+
+            val requestContext = McpRequestContext(
+                authorizationHeader = authToken?.let { "Bearer $it" }
+            )
+
+            val models = klerk.read(contextProvider(requestContext)) {
                 listIfAuthorized(model.collections.all)
             }
 
@@ -295,7 +310,7 @@ private suspend fun <T : Any, ModelStates : Enum<*>, C : KlerkContext, V> handle
     )
 
     // Create a context for the command
-    val context = contextProvider(McpRequestContext(command=command, authorizationHeader = "TODO!"))
+    val context = contextProvider(requestContext)
 
     // Handle the command
     when(val result = klerk.handle(command, context, ProcessingOptions(CommandToken.simple()))) {
