@@ -45,9 +45,9 @@ suspend fun createInitialTodo(klerk: Klerk<Ctx, Data>) {
             model = null,
             params = CreateTodoParams(
                 title = TodoTitle(title),
-                description = TodoDescription("Go to the store and buy milk"),
+                description = TodoDescription(desc),
                 username = UserName(username),
-                priority = TodoPriority(6),
+                priority = TodoPriority(priority),
             ),
         )
         klerk.handle(command, context, ProcessingOptions(CommandToken.simple())).orThrow()
