@@ -16,6 +16,56 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  // Track window size changes for responsive design
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Calculate responsive dimensions based on screen size
+  const getResponsiveDimensions = () => {
+    const { width, height } = windowSize;
+
+    // Mobile breakpoint (iPhone and small screens)
+    if (width <= 480) {
+      return {
+        width: Math.min(width - 20, 350), // Leave 10px margin on each side
+        height: Math.min(height - 120, 500), // Leave space for header and bottom margin
+        bottom: '80px',
+        right: '10px',
+      };
+    }
+
+    // Tablet breakpoint (iPad and medium screens)
+    if (width <= 768) {
+      return {
+        width: Math.min(width - 40, 450),
+        height: Math.min(height - 140, 600),
+        bottom: '80px',
+        right: '20px',
+      };
+    }
+
+    // Desktop (default)
+    return {
+      width: 500,
+      height: 650,
+      bottom: '80px',
+      right: '20px',
+    };
+  };
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -109,14 +159,16 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
 
   if (!isOpen) return null;
 
+  const dimensions = getResponsiveDimensions();
+
   return (
     <div
       style={{
         position: 'fixed',
-        bottom: '80px',
-        right: '20px',
-        width: '500px',
-        height: '650px',
+        bottom: dimensions.bottom,
+        right: dimensions.right,
+        width: `${dimensions.width}px`,
+        height: `${dimensions.height}px`,
         backgroundColor: 'white',
         borderRadius: '12px',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
@@ -129,7 +181,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
       {/* Header */}
       <div
         style={{
-          padding: '16px',
+          padding: windowSize.width <= 480 ? '12px' : '16px',
           borderBottom: '1px solid #e0e0e0',
           display: 'flex',
           justifyContent: 'space-between',
@@ -138,7 +190,11 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
           borderRadius: '12px 12px 0 0',
         }}
       >
-        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
+        <h3 style={{
+          margin: 0,
+          fontSize: windowSize.width <= 480 ? '14px' : '16px',
+          fontWeight: '600'
+        }}>
           🤖 Chat Assistant
         </h3>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -177,7 +233,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
       <div
         style={{
           flex: 1,
-          padding: '16px',
+          padding: windowSize.width <= 480 ? '12px' : '16px',
           overflowY: 'auto',
           backgroundColor: '#fafafa',
         }}
@@ -222,13 +278,13 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
       {/* Input */}
       <div
         style={{
-          padding: '16px',
+          padding: windowSize.width <= 480 ? '12px' : '16px',
           borderTop: '1px solid #e0e0e0',
           backgroundColor: 'white',
           borderRadius: '0 0 12px 12px',
         }}
       >
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: windowSize.width <= 480 ? '6px' : '8px' }}>
           <input
             ref={inputRef}
             type="text"
@@ -239,11 +295,11 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
             disabled={loading}
             style={{
               flex: 1,
-              padding: '10px 12px',
+              padding: windowSize.width <= 480 ? '8px 10px' : '10px 12px',
               border: '1px solid #ddd',
               borderRadius: '20px',
               outline: 'none',
-              fontSize: '14px',
+              fontSize: windowSize.width <= 480 ? '13px' : '14px',
             }}
           />
           <button
@@ -253,10 +309,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, currentUser })
               backgroundColor: inputValue.trim() && !loading ? '#2196F3' : '#ccc',
               color: 'white',
               border: 'none',
-              padding: '10px 16px',
+              padding: windowSize.width <= 480 ? '8px 12px' : '10px 16px',
               borderRadius: '20px',
               cursor: inputValue.trim() && !loading ? 'pointer' : 'not-allowed',
-              fontSize: '14px',
+              fontSize: windowSize.width <= 480 ? '13px' : '14px',
             }}
           >
             {loading ? '...' : 'Send'}
